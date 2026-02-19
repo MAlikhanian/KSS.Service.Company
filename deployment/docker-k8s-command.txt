@@ -1,0 +1,48 @@
+# Build and run locally
+dotnet build
+dotnet run --project KSS.Api
+
+# Step 1: Login to Docker registry
+docker login docker-hosted.sebaoffice.ir
+
+# Step 2: Build the Docker image (run from KSS.Service.Company root)
+docker build -t docker-hosted.sebaoffice.ir/kss-company-service:latest .
+
+# Alternative: Build and push in one command (if using buildx)
+docker buildx build --push -t docker-hosted.sebaoffice.ir/kss-company-service:latest .
+
+# Step 3: Push the image to registry
+docker push docker-hosted.sebaoffice.ir/kss-company-service:latest
+
+# Step 4: Create namespace (if it doesn't exist)
+kubectl create namespace kss-company-service
+
+# Step 5: Apply deployment (from KSS.Service.Company root)
+kubectl apply -f deployment/k8s-production.yaml
+
+# Step 6: Restart rollout (after pushing new image)
+kubectl rollout restart deployment/kss-company-service -n kss-company-service
+
+# Create Docker registry secret (one-time; replace username/password)
+kubectl create secret docker-registry docker-secret \
+  --docker-server=docker-hosted.sebaoffice.ir \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_PASSWORD \
+  --namespace kss-company-service
+
+# Useful commands
+kubectl get pods -n kss-company-service
+kubectl get secrets -n kss-company-service
+kubectl get pvc -n kss-company-service
+kubectl get configmaps -n kss-company-service
+kubectl get ingress -n kss-company-service
+kubectl get jobs -n kss-company-service
+kubectl get cronjobs -n kss-company-service
+kubectl get svc -n kss-company-service
+kubectl get certificate -n kss-company-service
+kubectl get sts -n kss-company-service
+kubectl get networkpolicy -n kss-company-service
+
+# Cleanup (if needed)
+# kubectl delete networkpolicy kss-company-service-network-policy -n kss-company-service
+# kubectl delete secret docker-secret -n kss-company-service
