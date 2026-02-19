@@ -10,7 +10,9 @@ namespace KSS.Entity
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid Id { get; set; } // شناسه
         public Guid CompanyId { get; set; } // شناسه شرکت
+        [Column(TypeName = "DATE")]
         public DateTime StartDate { get; set; } // تاریخ شروع
+        [Column(TypeName = "DATE")]
         public DateTime? EndDate { get; set; } // تاریخ پایان (NULL = جاری)
         public DateTime CreatedAt { get; set; } // تاریخ ایجاد
         public DateTime UpdatedAt { get; set; } // تاریخ به‌روزرسانی

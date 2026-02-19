@@ -43,6 +43,9 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<ICompanyTranslationService, CompanyTranslationService>();
             services.AddScoped<ICompanyNameHistoryRepository, CompanyNameHistoryRepository>();
             services.AddScoped<ICompanyNameHistoryService, CompanyNameHistoryService>();
+            services.AddScoped<ICompanyNameHistoryTranslationRepository, CompanyNameHistoryTranslationRepository>();
+            services.AddScoped<ICompanyNameHistoryTranslationService, CompanyNameHistoryTranslationService>();
+            services.AddScoped<ICompanyOperationService, CompanyOperationService>();
             services.AddScoped<ICompanyStakeholderRepository, CompanyStakeholderRepository>();
             services.AddScoped<ICompanyStakeholderService, CompanyStakeholderService>();
             services.AddScoped<ICompanyStakeholderHistoryRepository, CompanyStakeholderHistoryRepository>();

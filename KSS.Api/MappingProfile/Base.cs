@@ -11,12 +11,16 @@ namespace KSS.Api.MappingProfile
             // Company entities
             CreateMap<Company, CompanyDto>().ReverseMap();
             CreateMap<CompanyTranslation, CompanyTranslationDto>().ReverseMap();
+            CreateMap<CompanyInsertDto, Company>()
+                .ForMember(dest => dest.Translations, opt => opt.Ignore()) // Translations handled separately
+                .ForMember(dest => dest.NameHistories, opt => opt.Ignore()); // Name histories handled separately
             CreateMap<CompanyType, CompanyTypeDto>().ReverseMap();
             CreateMap<Industry, IndustryDto>().ReverseMap();
             CreateMap<StakeholderType, StakeholderTypeDto>().ReverseMap();
             CreateMap<CompanyStakeholder, CompanyStakeholderDto>().ReverseMap();
             CreateMap<CompanyStakeholderHistory, CompanyStakeholderHistoryDto>().ReverseMap();
             CreateMap<CompanyNameHistory, CompanyNameHistoryDto>().ReverseMap();
+            CreateMap<CompanyNameHistoryTranslation, CompanyNameHistoryTranslationDto>().ReverseMap();
 
             // Contact data
             CreateMap<EmailLabel, EmailLabelDto>().ReverseMap();

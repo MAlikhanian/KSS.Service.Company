@@ -14,6 +14,7 @@ namespace KSS.Service.Service
         public override async Task AddAsync(Phone item, bool saveChanges = true)
         {
             PhoneHelper.ValidateE164(item.PhoneNumber);
+            ValidatePhone(item);
             await base.AddAsync(item, saveChanges);
         }
 
@@ -21,12 +22,14 @@ namespace KSS.Service.Service
         {
             PhoneHelper.ValidateE164(item.PhoneNumber);
             var entity = _mapper.Map<Phone>(item);
+            ValidatePhone(entity);
             await base.AddAsync(entity, saveChanges);
         }
 
         public override void Update(Phone item, bool saveChanges = true)
         {
             PhoneHelper.ValidateE164(item.PhoneNumber);
+            ValidatePhone(item);
             base.Update(item, saveChanges);
         }
 
@@ -34,7 +37,17 @@ namespace KSS.Service.Service
         {
             PhoneHelper.ValidateE164(item.PhoneNumber);
             var entity = _mapper.Map<Phone>(item);
+            ValidatePhone(entity);
             base.Update(entity, saveChanges);
+        }
+
+        private static void ValidatePhone(Phone phone)
+        {
+            // Validate VerifiedAt: if IsVerified is true, VerifiedAt must be set
+            if (phone.IsVerified && !phone.VerifiedAt.HasValue)
+            {
+                throw new ArgumentException("VerifiedAt must be set when IsVerified is true.", nameof(phone));
+            }
         }
     }
 }

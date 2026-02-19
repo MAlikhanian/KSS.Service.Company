@@ -7,9 +7,18 @@
 --   Section 4: CompanyStakeholder, CompanyStakeholderHistory
 --   Section 5: Email, Phone, Address, AddressTranslation
 -- LanguageId ref KSS_Common_Prod.dbo.[Language]; CountryId/RegionId/CityId ref KSS_Common_Prod (no FK cross-database).
+-- Note: This script assumes the database is dropped before running (fresh database each time).
 -- ============================================================
-IF DB_ID(N'KSS_Company_Prod') IS NULL
-    CREATE DATABASE [KSS_Company_Prod];
+
+-- Safety check: Stop execution if database already exists
+IF DB_ID(N'KSS_Company_Prod') IS NOT NULL
+BEGIN
+    RAISERROR('Database KSS_Company_Prod already exists. Please drop the database before running this script.', 16, 1);
+    RETURN;
+END
+GO
+
+CREATE DATABASE [KSS_Company_Prod];
 GO
 
 USE [KSS_Company_Prod];
@@ -291,7 +300,7 @@ CREATE TABLE dbo.[Email] (
     Id             UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Email_Id DEFAULT NEWSEQUENTIALID(), -- شناسه
     CompanyId      UNIQUEIDENTIFIER NOT NULL, -- شناسه شرکت
     LabelId        TINYINT          NOT NULL, -- شناسه برچسب
-    Email          VARCHAR(128)     NOT NULL COLLATE Latin1_General_100_CI_AS, -- ایمیل (نرمال‌شده: حذف فاصله‌ها، lowercase، حساس به اعراب)
+    Email          VARCHAR(128)     COLLATE Latin1_General_100_CI_AS NOT NULL, -- ایمیل (Collation Latin1_General_100_CI_AS: case-insensitive، accent-sensitive)
     IsPrimary      BIT              NOT NULL CONSTRAINT DF_Email_IsPrimary DEFAULT 0, -- اصلی
     IsVerified     BIT              NOT NULL CONSTRAINT DF_Email_IsVerified DEFAULT 0, -- تأیید شده
     VerifiedAt     DATETIME2(7)     NULL, -- تاریخ تأیید (الزامی وقتی IsVerified=1)
@@ -392,7 +401,7 @@ GO
 -- Note: IF UPDATE(UpdatedAt) returns true if UpdatedAt is in the SET clause, even if value unchanged.
 -- This allows app-layer control: if an UPDATE includes UpdatedAt, the trigger skips (intentional design).
 -- ============================================================
-CREATE OR ALTER TRIGGER dbo.TR_Company_SetUpdatedAt ON dbo.[Company] AFTER UPDATE
+CREATE TRIGGER dbo.TR_Company_SetUpdatedAt ON dbo.[Company] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -401,7 +410,7 @@ BEGIN
   FROM dbo.[Company] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_CompanyNameHistory_SetUpdatedAt ON dbo.[CompanyNameHistory] AFTER UPDATE
+CREATE TRIGGER dbo.TR_CompanyNameHistory_SetUpdatedAt ON dbo.[CompanyNameHistory] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -410,7 +419,7 @@ BEGIN
   FROM dbo.[CompanyNameHistory] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_CompanyStakeholder_SetUpdatedAt ON dbo.[CompanyStakeholder] AFTER UPDATE
+CREATE TRIGGER dbo.TR_CompanyStakeholder_SetUpdatedAt ON dbo.[CompanyStakeholder] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -419,7 +428,7 @@ BEGIN
   FROM dbo.[CompanyStakeholder] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_CompanyStakeholderHistory_SetUpdatedAt ON dbo.[CompanyStakeholderHistory] AFTER UPDATE
+CREATE TRIGGER dbo.TR_CompanyStakeholderHistory_SetUpdatedAt ON dbo.[CompanyStakeholderHistory] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -428,7 +437,7 @@ BEGIN
   FROM dbo.[CompanyStakeholderHistory] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_Email_SetUpdatedAt ON dbo.[Email] AFTER UPDATE
+CREATE TRIGGER dbo.TR_Email_SetUpdatedAt ON dbo.[Email] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -437,7 +446,7 @@ BEGIN
   FROM dbo.[Email] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_Phone_SetUpdatedAt ON dbo.[Phone] AFTER UPDATE
+CREATE TRIGGER dbo.TR_Phone_SetUpdatedAt ON dbo.[Phone] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -446,7 +455,7 @@ BEGIN
   FROM dbo.[Phone] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_Address_SetUpdatedAt ON dbo.[Address] AFTER UPDATE
+CREATE TRIGGER dbo.TR_Address_SetUpdatedAt ON dbo.[Address] AFTER UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -459,7 +468,7 @@ GO
 -- ============================================================
 -- Overlap prevention triggers (prevent overlapping date ranges in history tables)
 -- ============================================================
-CREATE OR ALTER TRIGGER dbo.TR_CompanyNameHistory_PreventOverlap ON dbo.[CompanyNameHistory] AFTER INSERT, UPDATE
+CREATE TRIGGER dbo.TR_CompanyNameHistory_PreventOverlap ON dbo.[CompanyNameHistory] AFTER INSERT, UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -494,7 +503,7 @@ BEGIN
   END;
 END;
 GO
-CREATE OR ALTER TRIGGER dbo.TR_CompanyStakeholderHistory_PreventOverlap ON dbo.[CompanyStakeholderHistory] AFTER INSERT, UPDATE
+CREATE TRIGGER dbo.TR_CompanyStakeholderHistory_PreventOverlap ON dbo.[CompanyStakeholderHistory] AFTER INSERT, UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -536,15 +545,9 @@ GO
 
 -- Seed: CompanyType
 -- ============================================================
-;WITH codes AS (
-    SELECT Code FROM (VALUES
-        ('LLC'), ('Corporation'), ('Partnership'), ('SoleProprietorship'),
-        ('Cooperative'), ('NonProfit'), ('Government'), ('PublicCompany'), ('Other')
-    ) AS x(Code)
-)
-MERGE dbo.[CompanyType] AS t
-USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[CompanyType] (Code) VALUES
+    ('LLC'), ('Corporation'), ('Partnership'), ('SoleProprietorship'),
+    ('Cooperative'), ('NonProfit'), ('Government'), ('PublicCompany'), ('Other');
 GO
 
 -- Seed CompanyTypeTranslation (en/fa). LanguageId from KSS_Common_Prod.dbo.[Language].
@@ -570,31 +573,21 @@ GO
         ('Other',               'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[CompanyTypeTranslation] AS t
-USING (
-    SELECT ct.Id AS CompanyTypeId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[CompanyType] ct ON ct.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.CompanyTypeId = s.CompanyTypeId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (CompanyTypeId, LanguageId, Name) VALUES (s.CompanyTypeId, s.LanguageId, s.Name);
+INSERT INTO dbo.[CompanyTypeTranslation] (CompanyTypeId, LanguageId, Name)
+SELECT ct.Id AS CompanyTypeId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[CompanyType] ct ON ct.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 
 -- ============================================================
 -- Seed: Industry
 -- ============================================================
-;WITH codes AS (
-    SELECT Code FROM (VALUES
-        ('Technology'), ('Finance'), ('Healthcare'), ('Manufacturing'),
-        ('Retail'), ('Construction'), ('Transportation'), ('Education'),
-        ('Agriculture'), ('Energy'), ('Telecom'), ('RealEstate'),
-        ('FoodBeverage'), ('Media'), ('Tourism'), ('Mining'), ('Other')
-    ) AS x(Code)
-)
-MERGE dbo.[Industry] AS t
-USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[Industry] (Code) VALUES
+    ('Technology'), ('Finance'), ('Healthcare'), ('Manufacturing'),
+    ('Retail'), ('Construction'), ('Transportation'), ('Education'),
+    ('Agriculture'), ('Energy'), ('Telecom'), ('RealEstate'),
+    ('FoodBeverage'), ('Media'), ('Tourism'), ('Mining'), ('Other');
 GO
 
 -- Seed IndustryTranslation (en/fa).
@@ -636,23 +629,18 @@ GO
         ('Other',           'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[IndustryTranslation] AS t
-USING (
-    SELECT i.Id AS IndustryId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[Industry] i ON i.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.IndustryId = s.IndustryId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (IndustryId, LanguageId, Name) VALUES (s.IndustryId, s.LanguageId, s.Name);
+INSERT INTO dbo.[IndustryTranslation] (IndustryId, LanguageId, Name)
+SELECT i.Id AS IndustryId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[Industry] i ON i.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 
 -- ============================================================
 -- Seed: EmailLabel
 -- ============================================================
-;WITH codes AS (SELECT Code FROM (VALUES ('General'), ('Support'), ('Sales'), ('HR'), ('Other')) AS x(Code))
-MERGE dbo.[EmailLabel] AS t USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[EmailLabel] (Code) VALUES
+    ('General'), ('Support'), ('Sales'), ('HR'), ('Other');
 GO
 ;WITH v AS (
     SELECT Code, LangCode, Name FROM (VALUES
@@ -663,23 +651,18 @@ GO
         ('Other',   'en', N'Other'),     ('Other',   'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[EmailLabelTranslation] AS t
-USING (
-    SELECT el.Id AS EmailLabelId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[EmailLabel] el ON el.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.EmailLabelId = s.EmailLabelId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (EmailLabelId, LanguageId, Name) VALUES (s.EmailLabelId, s.LanguageId, s.Name);
+INSERT INTO dbo.[EmailLabelTranslation] (EmailLabelId, LanguageId, Name)
+SELECT el.Id AS EmailLabelId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[EmailLabel] el ON el.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 
 -- ============================================================
 -- Seed: PhoneLabel
 -- ============================================================
-;WITH codes AS (SELECT Code FROM (VALUES ('Office'), ('Fax'), ('Mobile'), ('Hotline'), ('Other')) AS x(Code))
-MERGE dbo.[PhoneLabel] AS t USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[PhoneLabel] (Code) VALUES
+    ('Office'), ('Fax'), ('Mobile'), ('Hotline'), ('Other');
 GO
 ;WITH v AS (
     SELECT Code, LangCode, Name FROM (VALUES
@@ -690,23 +673,18 @@ GO
         ('Other',   'en', N'Other'),     ('Other',   'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[PhoneLabelTranslation] AS t
-USING (
-    SELECT pl.Id AS PhoneLabelId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[PhoneLabel] pl ON pl.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.PhoneLabelId = s.PhoneLabelId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (PhoneLabelId, LanguageId, Name) VALUES (s.PhoneLabelId, s.LanguageId, s.Name);
+INSERT INTO dbo.[PhoneLabelTranslation] (PhoneLabelId, LanguageId, Name)
+SELECT pl.Id AS PhoneLabelId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[PhoneLabel] pl ON pl.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 
 -- ============================================================
 -- Seed: AddressLabel
 -- ============================================================
-;WITH codes AS (SELECT Code FROM (VALUES ('HeadOffice'), ('Branch'), ('Warehouse'), ('Factory'), ('Other')) AS x(Code))
-MERGE dbo.[AddressLabel] AS t USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[AddressLabel] (Code) VALUES
+    ('HeadOffice'), ('Branch'), ('Warehouse'), ('Factory'), ('Other');
 GO
 ;WITH v AS (
     SELECT Code, LangCode, Name FROM (VALUES
@@ -717,25 +695,18 @@ GO
         ('Other',      'en', N'Other'),          ('Other',      'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[AddressLabelTranslation] AS t
-USING (
-    SELECT al.Id AS AddressLabelId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[AddressLabel] al ON al.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.AddressLabelId = s.AddressLabelId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (AddressLabelId, LanguageId, Name) VALUES (s.AddressLabelId, s.LanguageId, s.Name);
+INSERT INTO dbo.[AddressLabelTranslation] (AddressLabelId, LanguageId, Name)
+SELECT al.Id AS AddressLabelId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[AddressLabel] al ON al.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 
 -- ============================================================
 -- Seed: StakeholderType
 -- ============================================================
-;WITH codes AS (
-    SELECT Code FROM (VALUES ('Parent'), ('Subsidiary'), ('Investor'), ('Partner'), ('Shareholder'), ('Franchisor'), ('Franchisee'), ('Other')) AS x(Code)
-)
-MERGE dbo.[StakeholderType] AS t USING codes AS s ON t.Code = s.Code
-WHEN NOT MATCHED BY TARGET THEN INSERT (Code) VALUES (s.Code);
+INSERT INTO dbo.[StakeholderType] (Code) VALUES
+    ('Parent'), ('Subsidiary'), ('Investor'), ('Partner'), ('Shareholder'), ('Franchisor'), ('Franchisee'), ('Other');
 GO
 ;WITH v AS (
     SELECT Code, LangCode, Name FROM (VALUES
@@ -749,13 +720,9 @@ GO
         ('Other',      'en', N'Other'),             ('Other',      'fa', N'سایر')
     ) AS x(Code, LangCode, Name)
 )
-MERGE dbo.[StakeholderTypeTranslation] AS t
-USING (
-    SELECT st.Id AS StakeholderTypeId, l.Id AS LanguageId, v.Name
-    FROM v
-    JOIN dbo.[StakeholderType] st ON st.Code = v.Code
-    JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode
-) AS s ON t.StakeholderTypeId = s.StakeholderTypeId AND t.LanguageId = s.LanguageId
-WHEN MATCHED THEN UPDATE SET Name = s.Name
-WHEN NOT MATCHED BY TARGET THEN INSERT (StakeholderTypeId, LanguageId, Name) VALUES (s.StakeholderTypeId, s.LanguageId, s.Name);
+INSERT INTO dbo.[StakeholderTypeTranslation] (StakeholderTypeId, LanguageId, Name)
+SELECT st.Id AS StakeholderTypeId, l.Id AS LanguageId, v.Name
+FROM v
+JOIN dbo.[StakeholderType] st ON st.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO

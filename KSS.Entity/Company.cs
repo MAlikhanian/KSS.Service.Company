@@ -11,6 +11,7 @@ namespace KSS.Entity
         public Guid Id { get; set; }
         public byte CompanyTypeId { get; set; }
         public short? IndustryId { get; set; } // Industry. NULL = unknown at creation (often set after verification/onboarding). If your domain always requires industry: make NOT NULL; or add Industry.Code='Unknown' and default to it.
+        [Column(TypeName = "DATE")]
         public DateTime RegistrationDate { get; set; } // تاریخ ثبت
         [Required]
         [MaxLength(30)]
@@ -30,6 +31,7 @@ namespace KSS.Entity
         [MaxLength(30)]
         [Column(TypeName = "VARCHAR(30)")]
         public string? TaxId { get; set; } // شناسه مالیاتی
+        [Column(TypeName = "DATE")]
         public DateTime? FoundedDate { get; set; } // تاریخ تأسیس
         [MaxLength(256)]
         [Column(TypeName = "VARCHAR(256)")]
