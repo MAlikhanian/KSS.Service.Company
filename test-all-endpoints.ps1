@@ -8,7 +8,7 @@ Write-Host "Company Service - Comprehensive Endpoint Tests" -ForegroundColor Cya
 Write-Host "========================================`n" -ForegroundColor Cyan
 
 # Step 1: Authenticate
-Write-Host "[1/15] Authenticating..." -ForegroundColor Yellow
+Write-Host "[1/19] Authenticating..." -ForegroundColor Yellow
 try {
     $loginBody = @{ Username = "0082280665"; Password = "ABcd@12345" } | ConvertTo-Json
     $authResponse = Invoke-RestMethod -Uri "http://localhost:8000/Api/User/Login" -Method Post -ContentType "application/json" -Body $loginBody
@@ -35,7 +35,7 @@ Write-Host "  RegistrationNo: $uniqueRegNo" -ForegroundColor Gray
 Write-Host "  EconomicCode: $uniqueEconCode`n" -ForegroundColor Gray
 
 # Step 2: Insert Company
-Write-Host "[2/15] Testing Company/AddDto..." -ForegroundColor Yellow
+Write-Host "[2/19] Testing Company/AddDto..." -ForegroundColor Yellow
 $companyId = [Guid]::NewGuid().ToString()
 $companyDto = @{
     Id = $companyId
@@ -74,7 +74,7 @@ try {
 }
 
 # Step 3: Update Company
-Write-Host "[3/15] Testing Company/UpdateDto..." -ForegroundColor Yellow
+Write-Host "[3/19] Testing Company/UpdateDto..." -ForegroundColor Yellow
 $companyUpdateDto = @{
     Id = $testCompanyId
     CompanyTypeId = 1
@@ -112,7 +112,7 @@ try {
 }
 
 # Step 4: Insert CompanyTranslation
-Write-Host "[4/15] Testing CompanyTranslation/AddDto..." -ForegroundColor Yellow
+Write-Host "[4/19] Testing CompanyTranslation/AddDto..." -ForegroundColor Yellow
 $translationDto = @{
     CompanyId = $testCompanyId
     LanguageId = 1
@@ -138,7 +138,7 @@ try {
 }
 
 # Step 5: Update CompanyTranslation
-Write-Host "[5/15] Testing CompanyTranslation/UpdateDto..." -ForegroundColor Yellow
+Write-Host "[5/19] Testing CompanyTranslation/UpdateDto..." -ForegroundColor Yellow
 $translationUpdateDto = @{
     CompanyId = $testCompanyId
     LanguageId = 1
@@ -165,7 +165,7 @@ try {
 }
 
 # Step 6: Insert CompanyNameHistory
-Write-Host "[6/15] Testing CompanyNameHistory/AddDto..." -ForegroundColor Yellow
+Write-Host "[6/19] Testing CompanyNameHistory/AddDto..." -ForegroundColor Yellow
 $nameHistoryId = [Guid]::NewGuid().ToString()
 $nameHistoryDto = @{
     Id = $nameHistoryId
@@ -194,7 +194,7 @@ try {
 }
 
 # Step 7: Update CompanyNameHistory
-Write-Host "[7/15] Testing CompanyNameHistory/UpdateDto..." -ForegroundColor Yellow
+Write-Host "[7/19] Testing CompanyNameHistory/UpdateDto..." -ForegroundColor Yellow
 $nameHistoryUpdateDto = @{
     Id = $testNameHistoryId
     CompanyId = $testCompanyId
@@ -222,7 +222,7 @@ try {
 }
 
 # Step 8: Insert CompanyNameHistoryTranslation
-Write-Host "[8/15] Testing CompanyNameHistoryTranslation/AddDto..." -ForegroundColor Yellow
+Write-Host "[8/19] Testing CompanyNameHistoryTranslation/AddDto..." -ForegroundColor Yellow
 $nameHistoryTranslationDto = @{
     CompanyNameHistoryId = $testNameHistoryId
     LanguageId = 1
@@ -247,7 +247,7 @@ try {
 }
 
 # Step 9: Update CompanyNameHistoryTranslation
-Write-Host "[9/15] Testing CompanyNameHistoryTranslation/UpdateDto..." -ForegroundColor Yellow
+Write-Host "[9/19] Testing CompanyNameHistoryTranslation/UpdateDto..." -ForegroundColor Yellow
 $nameHistoryTranslationUpdateDto = @{
     CompanyNameHistoryId = $testNameHistoryId
     LanguageId = 1
@@ -272,8 +272,141 @@ try {
     Write-Host ""
 }
 
-# Step 10: Insert CompanyStakeholder
-Write-Host "[10/15] Testing CompanyStakeholder/AddDto..." -ForegroundColor Yellow
+# Step 10: Insert Email (for company)
+Write-Host "[10/19] Testing Email/AddDto..." -ForegroundColor Yellow
+$emailId = [Guid]::NewGuid().ToString()
+$emailDto = @{
+    Id = $emailId
+    CompanyId = $testCompanyId
+    LabelId = 1
+    EmailAddress = "contact$timestamp@testcompany.com"
+    IsPrimary = $true
+    IsVerified = $false
+    VerifiedAt = $null
+    CreatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    UpdatedAt = (Get-Date).ToUniversalTime().ToString("o")
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "http://localhost:8002/Api/Email/AddDto" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{ "Authorization" = "Bearer $token" } -Body ([System.Text.Encoding]::UTF8.GetBytes($emailDto))
+    Write-Host "✅ Response:" -ForegroundColor Green
+    Write-Host ($response | ConvertTo-Json -Depth 5) -ForegroundColor White
+    Write-Host ""
+} catch {
+    Write-Host "❌ Error:" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $responseBody = $reader.ReadToEnd()
+        $reader.Close()
+        Write-Host $responseBody -ForegroundColor Red
+    } else {
+        Write-Host $_.Exception.Message -ForegroundColor Red
+    }
+    Write-Host ""
+}
+
+# Step 11: Insert Phone (for company, E.164 format)
+Write-Host "[11/19] Testing Phone/AddDto..." -ForegroundColor Yellow
+$phoneId = [Guid]::NewGuid().ToString()
+$phoneDto = @{
+    Id = $phoneId
+    CompanyId = $testCompanyId
+    LabelId = 1
+    CountryId = 1
+    PhoneNumber = "+989123456789"
+    IsPrimary = $true
+    IsVerified = $false
+    VerifiedAt = $null
+    CreatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    UpdatedAt = (Get-Date).ToUniversalTime().ToString("o")
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "http://localhost:8002/Api/Phone/AddDto" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{ "Authorization" = "Bearer $token" } -Body ([System.Text.Encoding]::UTF8.GetBytes($phoneDto))
+    Write-Host "✅ Response:" -ForegroundColor Green
+    Write-Host ($response | ConvertTo-Json -Depth 5) -ForegroundColor White
+    Write-Host ""
+} catch {
+    Write-Host "❌ Error:" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $responseBody = $reader.ReadToEnd()
+        $reader.Close()
+        Write-Host $responseBody -ForegroundColor Red
+    } else {
+        Write-Host $_.Exception.Message -ForegroundColor Red
+    }
+    Write-Host ""
+}
+
+# Step 12: Insert Address (for company)
+Write-Host "[12/19] Testing Address/AddDto..." -ForegroundColor Yellow
+$addressId = [Guid]::NewGuid().ToString()
+$addressDto = @{
+    Id = $addressId
+    CompanyId = $testCompanyId
+    LabelId = 1
+    CountryId = 1
+    RegionId = 1
+    CityId = 1
+    PostalCode = "1234567890"
+    Latitude = $null
+    Longitude = $null
+    IsPrimary = $true
+    IsVerified = $false
+    VerifiedAt = $null
+    CreatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    UpdatedAt = (Get-Date).ToUniversalTime().ToString("o")
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "http://localhost:8002/Api/Address/AddDto" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{ "Authorization" = "Bearer $token" } -Body ([System.Text.Encoding]::UTF8.GetBytes($addressDto))
+    Write-Host "✅ Response:" -ForegroundColor Green
+    Write-Host ($response | ConvertTo-Json -Depth 5) -ForegroundColor White
+    $testAddressId = $response.id
+    Write-Host ""
+} catch {
+    Write-Host "❌ Error:" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $responseBody = $reader.ReadToEnd()
+        $reader.Close()
+        Write-Host $responseBody -ForegroundColor Red
+    } else {
+        Write-Host $_.Exception.Message -ForegroundColor Red
+    }
+    Write-Host ""
+}
+
+# Step 13: Insert AddressTranslation (for address)
+Write-Host "[13/19] Testing AddressTranslation/AddDto..." -ForegroundColor Yellow
+$addressTranslationDto = @{
+    AddressId = $testAddressId
+    LanguageId = 1
+    Street1 = "123 Main Street"
+    Street2 = "Suite 100"
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "http://localhost:8002/Api/AddressTranslation/AddDto" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{ "Authorization" = "Bearer $token" } -Body ([System.Text.Encoding]::UTF8.GetBytes($addressTranslationDto))
+    Write-Host "✅ Response:" -ForegroundColor Green
+    Write-Host ($response | ConvertTo-Json -Depth 5) -ForegroundColor White
+    Write-Host ""
+} catch {
+    Write-Host "❌ Error:" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $responseBody = $reader.ReadToEnd()
+        $reader.Close()
+        Write-Host $responseBody -ForegroundColor Red
+    } else {
+        Write-Host $_.Exception.Message -ForegroundColor Red
+    }
+    Write-Host ""
+}
+
+# Step 14: Insert CompanyStakeholder
+Write-Host "[14/19] Testing CompanyStakeholder/AddDto..." -ForegroundColor Yellow
 $stakeholderId = [Guid]::NewGuid().ToString()
 $stakeholderDto = @{
     Id = $stakeholderId
@@ -302,8 +435,8 @@ try {
     Write-Host ""
 }
 
-# Step 11: Update CompanyStakeholder
-Write-Host "[11/15] Testing CompanyStakeholder/UpdateDto..." -ForegroundColor Yellow
+# Step 15: Update CompanyStakeholder
+Write-Host "[15/19] Testing CompanyStakeholder/UpdateDto..." -ForegroundColor Yellow
 $stakeholderUpdateDto = @{
     Id = $testStakeholderId
     CompanyId = $testCompanyId
@@ -331,8 +464,8 @@ try {
     Write-Host ""
 }
 
-# Step 12: Insert CompanyStakeholderHistory
-Write-Host "[12/15] Testing CompanyStakeholderHistory/AddDto..." -ForegroundColor Yellow
+# Step 16: Insert CompanyStakeholderHistory
+Write-Host "[16/19] Testing CompanyStakeholderHistory/AddDto..." -ForegroundColor Yellow
 $historyId = [Guid]::NewGuid().ToString()
 $historyDto = @{
     Id = $historyId
@@ -364,8 +497,8 @@ try {
     Write-Host ""
 }
 
-# Step 13: Update CompanyStakeholderHistory
-Write-Host "[13/15] Testing CompanyStakeholderHistory/UpdateDto..." -ForegroundColor Yellow
+# Step 17: Update CompanyStakeholderHistory
+Write-Host "[17/19] Testing CompanyStakeholderHistory/UpdateDto..." -ForegroundColor Yellow
 $historyUpdateDto = @{
     Id = $testHistoryId
     CompanyStakeholderId = $testStakeholderId
@@ -396,8 +529,8 @@ try {
     Write-Host ""
 }
 
-# Step 14: Test CompanyOperation/Insert (Custom Operation)
-Write-Host "[14/15] Testing CompanyOperation/Insert..." -ForegroundColor Yellow
+# Step 18: Test CompanyOperation/Insert (Custom Operation)
+Write-Host "[18/19] Testing CompanyOperation/Insert..." -ForegroundColor Yellow
 $timestamp2 = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $randomSuffix2 = Get-Random -Minimum 1000 -Maximum 9999
 $uniqueNationalId2 = "$timestamp2$randomSuffix2"
@@ -425,8 +558,8 @@ try {
     Write-Host ""
 }
 
-# Step 15: Test Duplicate Key Error (Middleware Test)
-Write-Host "[15/15] Testing Duplicate Key Error (Middleware Test)..." -ForegroundColor Yellow
+# Step 19: Test Duplicate Key Error (Middleware Test)
+Write-Host "[19/19] Testing Duplicate Key Error (Middleware Test)..." -ForegroundColor Yellow
 Write-Host "Attempting to insert Company with duplicate NationalId..." -ForegroundColor Gray
 # EconomicCode max length is 20
 $dupEconCode = "DUP$timestamp$randomSuffix"

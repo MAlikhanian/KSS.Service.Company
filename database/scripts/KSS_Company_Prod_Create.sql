@@ -14,7 +14,7 @@ USE [master];
 GO
 
 -- If database exists: force-close connections and drop it
-IF DB_ID(N'KSS_Company_Prod') IS NOT NULL
+/* IF DB_ID(N'KSS_Company_Prod') IS NOT NULL
 BEGIN
     ALTER DATABASE [KSS_Company_Prod] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
     DROP DATABASE [KSS_Company_Prod];
@@ -25,6 +25,19 @@ CREATE DATABASE [KSS_Company_Prod];
 GO
 
 USE [KSS_Company_Prod];
+GO */
+
+IF DB_ID(N'KSS_Company_Dev') IS NOT NULL
+BEGIN
+    ALTER DATABASE [KSS_Company_Dev] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [KSS_Company_Dev];
+END
+GO
+
+CREATE DATABASE [KSS_Company_Dev];
+GO
+
+USE [KSS_Company_Dev];
 GO
 
 -- ============================================================
