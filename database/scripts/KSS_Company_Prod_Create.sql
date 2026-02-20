@@ -7,14 +7,17 @@
 --   Section 4: CompanyStakeholder, CompanyStakeholderHistory
 --   Section 5: Email, Phone, Address, AddressTranslation
 -- LanguageId ref KSS_Common_Prod.dbo.[Language]; CountryId/RegionId/CityId ref KSS_Common_Prod (no FK cross-database).
--- Note: This script assumes the database is dropped before running (fresh database each time).
+-- If the database already exists, connections are force-closed and the database is dropped before create.
 -- ============================================================
 
--- Safety check: Stop execution if database already exists
+USE [master];
+GO
+
+-- If database exists: force-close connections and drop it
 IF DB_ID(N'KSS_Company_Prod') IS NOT NULL
 BEGIN
-    RAISERROR('Database KSS_Company_Prod already exists. Please drop the database before running this script.', 16, 1);
-    RETURN;
+    ALTER DATABASE [KSS_Company_Prod] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [KSS_Company_Prod];
 END
 GO
 

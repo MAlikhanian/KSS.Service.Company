@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata;
 using KSS.Entity;
 
 namespace KSS.Data.Configuration
@@ -59,6 +60,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<Company> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_Company_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasOne(x => x.CompanyType).WithMany(x => x.Companies).HasForeignKey(x => x.CompanyTypeId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(x => x.Industry).WithMany(x => x.Companies).HasForeignKey(x => x.IndustryId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Translations).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
@@ -82,6 +86,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<CompanyNameHistory> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_CompanyNameHistory_SetUpdatedAt, TR_CompanyNameHistory_PreventOverlap)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasMany(x => x.Translations).WithOne(x => x.NameHistory).HasForeignKey(x => x.CompanyNameHistoryId).OnDelete(DeleteBehavior.Cascade);
         }
     }
@@ -98,6 +105,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<CompanyStakeholder> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_CompanyStakeholder_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasOne(x => x.StakeholderType).WithMany(x => x.Stakeholders).HasForeignKey(x => x.StakeholderTypeId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Histories).WithOne(x => x.Stakeholder).HasForeignKey(x => x.CompanyStakeholderId).OnDelete(DeleteBehavior.Cascade);
             
@@ -110,6 +120,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<CompanyStakeholderHistory> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_CompanyStakeholderHistory_SetUpdatedAt, TR_CompanyStakeholderHistory_PreventOverlap)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             // Unique constraint: (CompanyStakeholderId, EffectiveDate)
             b.HasIndex(x => new { x.CompanyStakeholderId, x.EffectiveDate }).IsUnique();
         }
@@ -120,6 +133,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<Email> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_Email_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasOne(x => x.Label).WithMany(x => x.Emails).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
             
             // Unique constraint: (CompanyId, Email)
@@ -135,6 +151,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<Phone> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_Phone_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasOne(x => x.Label).WithMany(x => x.Phones).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
             
             // Unique constraint: (CompanyId, CountryId, PhoneNumber)
@@ -150,6 +169,9 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<Address> b)
         {
+            // Disable OUTPUT clause because table has triggers (TR_Address_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+            
             b.HasOne(x => x.Label).WithMany(x => x.Addresses).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Translations).WithOne(x => x.Address).HasForeignKey(x => x.AddressId).OnDelete(DeleteBehavior.Cascade);
             

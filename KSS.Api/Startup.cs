@@ -13,6 +13,7 @@ using AutoMapper;
 using KSS.Api.ServiceExtention;
 using KSS.Api.MappingProfile;
 using KSS.Api.Asset;
+using KSS.Api.Middleware;
 using KSS.Helper.Model;
 
 namespace KSS.Api
@@ -199,11 +200,10 @@ namespace KSS.Api
 
         public void Configure(IApplicationBuilder applicationBuilder, IWebHostEnvironment webHostEnvironment)
         {
-            if (webHostEnvironment.IsDevelopment())
-            {
-                applicationBuilder.UseDeveloperExceptionPage();
-
-            }
+            // Global exception handler - must be first to catch all exceptions
+            // Note: Do NOT use UseDeveloperExceptionPage() as it intercepts exceptions
+            // before our middleware can return proper JSON error responses
+            applicationBuilder.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
             // CORS must be configured before other middleware
             applicationBuilder.UseCors(configurePolicy =>
