@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using KSS.Dto;
+using KSS.Helper.CustomAttribute;
 using KSS.Service.IService;
 
 namespace KSS.Api.Controller
 {
     [ApiController]
     [Route("Api/CompanyOperation")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HasPermission("Company.Create")]
     public class CompanyOperationController : ControllerBase
     {
         private readonly ICompanyOperationService _operationService;

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using KSS.Helper;
 using KSS.Helper.Model;
+using KSS.Helper.Authorization;
 using KSS.Service.IService;
 
 namespace KSS.Api.Controller
@@ -9,6 +10,7 @@ namespace KSS.Api.Controller
     [ApiController]
     [Route("Api/[controller]/[action]")]
     [Authorize]
+    [ServiceFilter(typeof(PermissionAuthorizationFilter))]
     public class BaseController<T, TViewDto, TAddDto, TUpdateDto> : ControllerBase
         where T : class
         where TViewDto : class
