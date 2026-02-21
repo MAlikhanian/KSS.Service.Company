@@ -1,0 +1,15 @@
+{
+  "name": "kss-company-migration-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Migration tools for transferring brokerage data from PostgreSQL to SQL Server",
+  "scripts": {
+    "analyze": "node analyze-brokerages.js",
+    "generate-sql": "node generate-migration-sql.js",
+    "fix-unicode": "node fix-unicode-and-add-history.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "mssql": "^11.0.0"
+  }
+}
