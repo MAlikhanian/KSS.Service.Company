@@ -13,6 +13,7 @@ namespace KSS.Helper.Authorization
     ///
     /// Action name mapping:
     ///   Read   → FindAsync, SingleAsync, ToListAllAsync, ToListAsync, ToListByFilterAsync, ToListDtoAsync
+    ///   (Custom actions like FindByCompanyIdAsync, FindByPersonIdAsync skip CRUD permission — only require [Authorize])
     ///   Create → AddAsync, AddDtoAsync, AddRangeAsync
     ///   Update → Update, UpdateDto, UpdateRange
     ///   Delete → Remove, RemoveRange

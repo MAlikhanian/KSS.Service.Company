@@ -10,25 +10,25 @@ namespace KSS.Api.Controller
     [Route("Api/[controller]")]
     [Authorize]
     [HasPermission("Company.Read")]
-    public class BrokerageSelectController : ControllerBase
+    public class CompanySelectController : ControllerBase
     {
-        private readonly IBrokerageSelectService _service;
+        private readonly ICompanySelectService _service;
 
-        public BrokerageSelectController(IBrokerageSelectService service)
+        public CompanySelectController(ICompanySelectService service)
         {
             _service = service;
         }
 
         /// <summary>
-        /// GET /Api/BrokerageSelect/List?languageId=12&query=کارگزاری
+        /// GET /Api/CompanySelect/List?languageId=12&query=کارگزاری
         /// Returns a lightweight list of companies for select dropdowns.
         /// </summary>
         [HttpGet("List")]
-        public async Task<ActionResult<IEnumerable<BrokerageSelectDto>>> List(
+        public async Task<ActionResult<IEnumerable<CompanySelectDto>>> List(
             [FromQuery] short languageId = 12,
             [FromQuery] string? query = null)
         {
-            var result = await _service.GetBrokerageSelectListAsync(languageId, query);
+            var result = await _service.GetCompanySelectListAsync(languageId, query);
             return Ok(result);
         }
     }

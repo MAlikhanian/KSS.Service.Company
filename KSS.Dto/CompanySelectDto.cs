@@ -1,10 +1,10 @@
 namespace KSS.Dto
 {
     /// <summary>
-    /// Lightweight DTO for brokerage/company select dropdowns.
-    /// Returns company with its translated name in a single object.
+    /// Lightweight DTO for company select dropdowns.
+    /// Returns company with all name history entries.
     /// </summary>
-    public class BrokerageSelectDto
+    public class CompanySelectDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -12,5 +12,6 @@ namespace KSS.Dto
         public bool IsActive { get; set; }
         public string? NationalId { get; set; }
         public string? Website { get; set; }
+        public List<CompanyNameHistoryDto> NameHistory { get; set; } = new();
     }
 }

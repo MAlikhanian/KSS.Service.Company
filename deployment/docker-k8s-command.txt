@@ -18,12 +18,13 @@ docker push docker-hosted.sebaoffice.ir/kss-company-service:latest
 kubectl create namespace kss-company-service
 
 # Step 5: Apply deployment (from KSS.Service.Company root)
-kubectl apply -f deployment/k8s-production.yaml
+kubectl apply -f deployment.yaml
 
 # Step 6: Restart rollout (after pushing new image)
 kubectl rollout restart deployment/kss-company-service -n kss-company-service
 
 # Create Docker registry secret (one-time; replace username/password)
+
 kubectl create secret docker-registry docker-secret \
   --docker-server=docker-hosted.sebaoffice.ir \
   --docker-username=YOUR_USERNAME \

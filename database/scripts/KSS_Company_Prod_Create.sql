@@ -416,7 +416,13 @@ GO
 -- UpdatedAt triggers (set UpdatedAt = SYSUTCDATETIME() on UPDATE; skip if UpdatedAt in UPDATE to reduce extra writes)
 -- Note: IF UPDATE(UpdatedAt) returns true if UpdatedAt is in the SET clause, even if value unchanged.
 -- This allows app-layer control: if an UPDATE includes UpdatedAt, the trigger skips (intentional design).
+-- NOTE: SET QUOTED_IDENTIFIER ON is required before each trigger
+--       because EF Core sends updates with QUOTED_IDENTIFIER ON.
+--       SQL Server validates trigger SET options match the session.
 -- ============================================================
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_Company_SetUpdatedAt ON dbo.[Company] AFTER UPDATE
 AS
 BEGIN
@@ -425,6 +431,9 @@ BEGIN
   UPDATE c SET UpdatedAt = SYSUTCDATETIME()
   FROM dbo.[Company] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
+GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 GO
 CREATE TRIGGER dbo.TR_CompanyNameHistory_SetUpdatedAt ON dbo.[CompanyNameHistory] AFTER UPDATE
 AS
@@ -435,6 +444,9 @@ BEGIN
   FROM dbo.[CompanyNameHistory] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_CompanyStakeholder_SetUpdatedAt ON dbo.[CompanyStakeholder] AFTER UPDATE
 AS
 BEGIN
@@ -443,6 +455,9 @@ BEGIN
   UPDATE c SET UpdatedAt = SYSUTCDATETIME()
   FROM dbo.[CompanyStakeholder] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
+GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 GO
 CREATE TRIGGER dbo.TR_CompanyStakeholderHistory_SetUpdatedAt ON dbo.[CompanyStakeholderHistory] AFTER UPDATE
 AS
@@ -453,6 +468,9 @@ BEGIN
   FROM dbo.[CompanyStakeholderHistory] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_Email_SetUpdatedAt ON dbo.[Email] AFTER UPDATE
 AS
 BEGIN
@@ -462,6 +480,9 @@ BEGIN
   FROM dbo.[Email] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_Phone_SetUpdatedAt ON dbo.[Phone] AFTER UPDATE
 AS
 BEGIN
@@ -470,6 +491,9 @@ BEGIN
   UPDATE c SET UpdatedAt = SYSUTCDATETIME()
   FROM dbo.[Phone] c INNER JOIN inserted i ON i.Id = c.Id;
 END;
+GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 GO
 CREATE TRIGGER dbo.TR_Address_SetUpdatedAt ON dbo.[Address] AFTER UPDATE
 AS
@@ -484,6 +508,9 @@ GO
 -- ============================================================
 -- Overlap prevention triggers (prevent overlapping date ranges in history tables)
 -- ============================================================
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_CompanyNameHistory_PreventOverlap ON dbo.[CompanyNameHistory] AFTER INSERT, UPDATE
 AS
 BEGIN
@@ -519,11 +546,14 @@ BEGIN
   END;
 END;
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 CREATE TRIGGER dbo.TR_CompanyStakeholderHistory_PreventOverlap ON dbo.[CompanyStakeholderHistory] AFTER INSERT, UPDATE
 AS
 BEGIN
   SET NOCOUNT ON;
-  
+
   -- Check for overlaps within the inserted/updated rows themselves (multi-row operations)
   IF EXISTS (
     SELECT 1
