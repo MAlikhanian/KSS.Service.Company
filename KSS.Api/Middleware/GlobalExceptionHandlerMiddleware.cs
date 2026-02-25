@@ -28,7 +28,7 @@ namespace KSS.Api.Middleware
             {
                 // Check if this is a known SQL exception that we handle gracefully
                 var sqlEx = FindSqlException(ex);
-                var isHandledException = sqlEx != null || ex is DbUpdateException || ex is ArgumentException || ex is UnauthorizedAccessException;
+                var isHandledException = sqlEx != null || ex is DbUpdateException || ex is ArgumentException || ex is UnauthorizedAccessException || ex is KeyNotFoundException;
                 
                 // Only log unexpected exceptions
                 if (!isHandledException)
@@ -89,6 +89,15 @@ namespace KSS.Api.Middleware
                         StatusCode = (int)HttpStatusCode.BadRequest,
                         Message = argEx.Message,
                         Details = argEx.ParamName != null ? $"Parameter: {argEx.ParamName}" : null
+                    };
+                    break;
+
+                case KeyNotFoundException knfEx:
+                    errorResponse = new ErrorResponse
+                    {
+                        StatusCode = (int)HttpStatusCode.NotFound,
+                        Message = knfEx.Message,
+                        Details = null
                     };
                     break;
 

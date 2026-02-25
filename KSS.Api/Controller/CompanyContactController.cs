@@ -36,6 +36,14 @@ namespace KSS.Api.Controller
             return Ok(result);
         }
 
+        [HttpPut("Email/{emailId}")]
+        [HasPermission("Email.Update")]
+        public async Task<ActionResult<CompanyEmailViewDto>> UpdateEmail(Guid emailId, [FromBody] CompanyEmailViewDto dto)
+        {
+            var result = await _service.UpdateEmailAsync(emailId, dto);
+            return Ok(result);
+        }
+
         [HttpDelete("Email/{emailId}")]
         [HasPermission("Email.Delete")]
         public async Task<ActionResult> DeleteEmail(Guid emailId)
@@ -53,6 +61,14 @@ namespace KSS.Api.Controller
             return Ok(result);
         }
 
+        [HttpPut("Phone/{phoneId}")]
+        [HasPermission("Phone.Update")]
+        public async Task<ActionResult<CompanyPhoneViewDto>> UpdatePhone(Guid phoneId, [FromBody] CompanyPhoneViewDto dto)
+        {
+            var result = await _service.UpdatePhoneAsync(phoneId, dto);
+            return Ok(result);
+        }
+
         [HttpDelete("Phone/{phoneId}")]
         [HasPermission("Phone.Delete")]
         public async Task<ActionResult> DeletePhone(Guid phoneId)
@@ -67,6 +83,14 @@ namespace KSS.Api.Controller
         public async Task<ActionResult<CompanyAddressViewDto>> AddAddress(Guid companyId, [FromBody] CompanyAddressViewDto dto, [FromQuery] short languageId = 12)
         {
             var result = await _service.AddAddressAsync(companyId, dto, languageId);
+            return Ok(result);
+        }
+
+        [HttpPut("Address/{addressId}")]
+        [HasPermission("Address.Update")]
+        public async Task<ActionResult<CompanyAddressViewDto>> UpdateAddress(Guid addressId, [FromBody] CompanyAddressViewDto dto, [FromQuery] short languageId = 12)
+        {
+            var result = await _service.UpdateAddressAsync(addressId, dto, languageId);
             return Ok(result);
         }
 

@@ -14,6 +14,8 @@ namespace KSS.Entity
         public DateTime StartDate { get; set; } // تاریخ شروع
         [Column(TypeName = "DATE")]
         public DateTime? EndDate { get; set; } // تاریخ پایان (NULL = جاری)
+        [MaxLength(500)]
+        public string? Description { get; set; } // توضیحات تغییر نام
         public DateTime CreatedAt { get; set; } // تاریخ ایجاد
         public DateTime UpdatedAt { get; set; } // تاریخ به‌روزرسانی
 

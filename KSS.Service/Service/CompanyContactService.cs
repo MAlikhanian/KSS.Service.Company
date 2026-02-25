@@ -117,6 +117,21 @@ namespace KSS.Service.Service
             return dto;
         }
 
+        public async Task<CompanyEmailViewDto> UpdateEmailAsync(Guid emailId, CompanyEmailViewDto dto)
+        {
+            var entity = await _dbContext.Emails.FindAsync(emailId)
+                ?? throw new KeyNotFoundException($"Email {emailId} not found");
+            entity.LabelId = dto.LabelId;
+            entity.EmailAddress = dto.EmailAddress.Trim().ToLowerInvariant();
+            entity.IsPrimary = dto.IsPrimary;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            dto.Id = entity.Id;
+            dto.CompanyId = entity.CompanyId;
+            return dto;
+        }
+
         public async Task DeleteEmailAsync(Guid emailId)
         {
             var entity = await _dbContext.Emails.FindAsync(emailId);
@@ -146,6 +161,22 @@ namespace KSS.Service.Service
 
             dto.Id = entity.Id;
             dto.CompanyId = companyId;
+            return dto;
+        }
+
+        public async Task<CompanyPhoneViewDto> UpdatePhoneAsync(Guid phoneId, CompanyPhoneViewDto dto)
+        {
+            var entity = await _dbContext.Phones.FindAsync(phoneId)
+                ?? throw new KeyNotFoundException($"Phone {phoneId} not found");
+            entity.LabelId = dto.LabelId;
+            entity.CountryId = dto.CountryId;
+            entity.PhoneNumber = dto.PhoneNumber.Trim();
+            entity.IsPrimary = dto.IsPrimary;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            dto.Id = entity.Id;
+            dto.CompanyId = entity.CompanyId;
             return dto;
         }
 
@@ -193,6 +224,45 @@ namespace KSS.Service.Service
 
             dto.Id = entity.Id;
             dto.CompanyId = companyId;
+            return dto;
+        }
+
+        public async Task<CompanyAddressViewDto> UpdateAddressAsync(Guid addressId, CompanyAddressViewDto dto, short languageId = 12)
+        {
+            var entity = await _dbContext.Addresses.FindAsync(addressId)
+                ?? throw new KeyNotFoundException($"Address {addressId} not found");
+            entity.LabelId = dto.LabelId;
+            entity.CountryId = dto.CountryId;
+            entity.RegionId = dto.RegionId;
+            entity.CityId = dto.CityId;
+            entity.PostalCode = dto.PostalCode.Trim();
+            entity.IsPrimary = dto.IsPrimary;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            // Update or insert address translation (Street1, Street2)
+            var translation = await _dbContext.AddressTranslations
+                .FirstOrDefaultAsync(at => at.AddressId == addressId && at.LanguageId == languageId);
+
+            if (translation != null)
+            {
+                translation.Street1 = dto.Street1?.Trim() ?? string.Empty;
+                translation.Street2 = dto.Street2?.Trim();
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.Street1))
+            {
+                _dbContext.AddressTranslations.Add(new AddressTranslation
+                {
+                    AddressId = addressId,
+                    LanguageId = languageId,
+                    Street1 = dto.Street1.Trim(),
+                    Street2 = dto.Street2?.Trim()
+                });
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            dto.Id = entity.Id;
+            dto.CompanyId = entity.CompanyId;
             return dto;
         }
 

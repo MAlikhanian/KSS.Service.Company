@@ -8,7 +8,12 @@ namespace KSS.Service.Service
 {
     public class CompanyNameHistoryService : BaseService<CompanyNameHistory, CompanyNameHistoryDto, CompanyNameHistoryDto, CompanyNameHistoryDto>, ICompanyNameHistoryService
     {
-        public CompanyNameHistoryService(IMapper mapper, ICompanyNameHistoryRepository repository) : base(mapper, repository) { }
+        private readonly ICompanyNameHistoryRepository _nameHistoryRepository;
+
+        public CompanyNameHistoryService(IMapper mapper, ICompanyNameHistoryRepository repository) : base(mapper, repository)
+        {
+            _nameHistoryRepository = repository;
+        }
 
         public override async Task AddAsync(CompanyNameHistory item, bool saveChanges = true)
         {
@@ -29,11 +34,24 @@ namespace KSS.Service.Service
             base.Update(item, saveChanges);
         }
 
+        /// <summary>
+        /// Load existing entity first, then only update the editable fields.
+        /// This avoids DbUpdateConcurrencyException caused by AutoMapper setting
+        /// CreatedAt/UpdatedAt to default values on a detached entity.
+        /// </summary>
         public override void UpdateDto(CompanyNameHistoryDto item, bool saveChanges = true)
         {
-            var entity = _mapper.Map<CompanyNameHistory>(item);
-            ValidateNameHistory(entity);
-            base.Update(entity, saveChanges);
+            var existing = _nameHistoryRepository.Find(item.Id)
+                ?? throw new KeyNotFoundException($"CompanyNameHistory with Id '{item.Id}' not found.");
+
+            // Only update the editable fields — preserve CreatedAt, UpdatedAt (managed by trigger)
+            existing.CompanyId = item.CompanyId;
+            existing.StartDate = item.StartDate;
+            existing.EndDate = item.EndDate;
+            existing.Description = item.Description;
+
+            ValidateNameHistory(existing);
+            base.Update(existing, saveChanges);
         }
 
         private static void ValidateNameHistory(CompanyNameHistory history)

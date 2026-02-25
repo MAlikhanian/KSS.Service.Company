@@ -220,6 +220,7 @@ CREATE TABLE dbo.[CompanyNameHistory] (
     CompanyId    UNIQUEIDENTIFIER NOT NULL, -- شناسه شرکت
     StartDate    DATE             NOT NULL, -- تاریخ شروع
     EndDate      DATE             NULL, -- تاریخ پایان (NULL = جاری)
+    Description  NVARCHAR(500)    NULL, -- توضیحات تغییر نام
     CreatedAt    DATETIME2(7)     NOT NULL CONSTRAINT DF_CompanyNameHistory_CreatedAt DEFAULT SYSUTCDATETIME(), -- تاریخ ایجاد
     UpdatedAt    DATETIME2(7)     NOT NULL CONSTRAINT DF_CompanyNameHistory_UpdatedAt DEFAULT SYSUTCDATETIME(), -- تاریخ به‌روزرسانی
     CONSTRAINT PK_CompanyNameHistory PRIMARY KEY CLUSTERED (Id),
