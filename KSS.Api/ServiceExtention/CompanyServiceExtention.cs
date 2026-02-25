@@ -51,6 +51,8 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<ICompanyStakeholderService, CompanyStakeholderService>();
             services.AddScoped<ICompanyStakeholderHistoryRepository, CompanyStakeholderHistoryRepository>();
             services.AddScoped<ICompanyStakeholderHistoryService, CompanyStakeholderHistoryService>();
+            services.AddScoped<ICompanyFinancialInfoRepository, CompanyFinancialInfoRepository>();
+            services.AddScoped<ICompanyFinancialInfoService, CompanyFinancialInfoService>();
 
             // Contact data services
             services.AddScoped<IEmailRepository, EmailRepository>();

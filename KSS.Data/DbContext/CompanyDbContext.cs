@@ -26,6 +26,7 @@ namespace KSS.Data.DbContexts
         public DbSet<CompanyNameHistoryTranslation> CompanyNameHistoryTranslations { get; set; }
         public DbSet<CompanyStakeholder> CompanyStakeholders { get; set; }
         public DbSet<CompanyStakeholderHistory> CompanyStakeholderHistories { get; set; }
+        public DbSet<CompanyFinancialInfo> CompanyFinancialInfos { get; set; }
 
         // Contact data
         public DbSet<Email> Emails { get; set; }

@@ -101,6 +101,18 @@ namespace KSS.Data.Configuration
         }
     }
 
+    public class CompanyFinancialInfoConfiguration : IEntityTypeConfiguration<CompanyFinancialInfo>
+    {
+        public void Configure(EntityTypeBuilder<CompanyFinancialInfo> b)
+        {
+            // Disable OUTPUT clause because table has triggers (TR_CompanyFinancialInfo_SetUpdatedAt)
+            b.ToTable(tb => tb.UseSqlOutputClause(false));
+
+            // Unique constraint: one record per company per fiscal year
+            b.HasIndex(x => new { x.CompanyId, x.FiscalYear }).IsUnique();
+        }
+    }
+
     public class CompanyStakeholderConfiguration : IEntityTypeConfiguration<CompanyStakeholder>
     {
         public void Configure(EntityTypeBuilder<CompanyStakeholder> b)

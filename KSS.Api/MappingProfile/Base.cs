@@ -21,6 +21,7 @@ namespace KSS.Api.MappingProfile
             CreateMap<CompanyStakeholderHistory, CompanyStakeholderHistoryDto>().ReverseMap();
             CreateMap<CompanyNameHistory, CompanyNameHistoryDto>().ReverseMap();
             CreateMap<CompanyNameHistoryTranslation, CompanyNameHistoryTranslationDto>().ReverseMap();
+            CreateMap<CompanyFinancialInfo, CompanyFinancialInfoDto>().ReverseMap();
 
             // Contact data
             CreateMap<EmailLabel, EmailLabelDto>().ReverseMap();
