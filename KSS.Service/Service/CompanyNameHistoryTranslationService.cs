@@ -6,19 +6,24 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
+    /// <summary>
+    /// Single-table CRUD service for CompanyNameHistoryTranslation.
+    /// Multi-table orchestration (sync to CompanyTranslation, etc.) is handled by CompanyNameManagementService.
+    /// </summary>
     public class CompanyNameHistoryTranslationService : BaseService<CompanyNameHistoryTranslation, CompanyNameHistoryTranslationDto, CompanyNameHistoryTranslationDto, CompanyNameHistoryTranslationDto>, ICompanyNameHistoryTranslationService
     {
         private readonly ICompanyNameHistoryTranslationRepository _translationRepository;
 
-        public CompanyNameHistoryTranslationService(IMapper mapper, ICompanyNameHistoryTranslationRepository repository) : base(mapper, repository)
+        public CompanyNameHistoryTranslationService(
+            IMapper mapper,
+            ICompanyNameHistoryTranslationRepository repository) : base(mapper, repository)
         {
             _translationRepository = repository;
         }
 
         /// <summary>
         /// Load existing entity first, then only update the editable fields.
-        /// This avoids DbUpdateConcurrencyException caused by _dbSet.Update()
-        /// on a detached entity that doesn't exist or has stale tracked state.
+        /// Prevents DbUpdateConcurrencyException from _dbSet.Update() on detached entity.
         /// </summary>
         public override void UpdateDto(CompanyNameHistoryTranslationDto item, bool saveChanges = true)
         {

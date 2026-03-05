@@ -1,5 +1,5 @@
+using KSS.Helper;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -17,7 +17,6 @@ namespace KSS.Api.Middleware
             _logger = logger;
         }
 
-        [DebuggerStepThrough]
         public async Task InvokeAsync(HttpContext context)
         {
             try
@@ -28,7 +27,7 @@ namespace KSS.Api.Middleware
             {
                 // Check if this is a known SQL exception that we handle gracefully
                 var sqlEx = FindSqlException(ex);
-                var isHandledException = sqlEx != null || ex is DbUpdateException || ex is ArgumentException || ex is UnauthorizedAccessException || ex is KeyNotFoundException;
+                var isHandledException = sqlEx != null || ex is DbUpdateException || ex is ArgumentException || ex is UnauthorizedAccessException || ex is KeyNotFoundException || ex is BusinessRuleException;
                 
                 // Only log unexpected exceptions
                 if (!isHandledException)
@@ -83,6 +82,15 @@ namespace KSS.Api.Middleware
                     }
                     break;
 
+                case BusinessRuleException brEx:
+                    errorResponse = new ErrorResponse
+                    {
+                        StatusCode = (int)HttpStatusCode.BadRequest,
+                        Message = brEx.Message,
+                        Details = null
+                    };
+                    break;
+
                 case ArgumentException argEx:
                     errorResponse = new ErrorResponse
                     {
@@ -122,7 +130,8 @@ namespace KSS.Api.Middleware
             if (!response.HasStarted)
             {
                 response.StatusCode = errorResponse.StatusCode;
-                var jsonResponse = JsonSerializer.Serialize(errorResponse);
+                var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                var jsonResponse = JsonSerializer.Serialize(errorResponse, jsonOptions);
                 return response.WriteAsync(jsonResponse);
             }
             // If response has already started, we can't modify it

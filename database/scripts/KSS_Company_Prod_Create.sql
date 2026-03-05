@@ -513,16 +513,13 @@ CREATE TABLE dbo.[CompanyFinancialInfo] (
     Id                  UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_CompanyFinancialInfo_Id DEFAULT NEWSEQUENTIALID(),
     CompanyId           UNIQUEIDENTIFIER NOT NULL,
     FiscalYear          SMALLINT         NOT NULL,
-    RegisteredCapital   DECIMAL(18,0)    NOT NULL,
-    NumberOfShares      BIGINT           NOT NULL,
+    RegisteredCapital   DECIMAL(18,0)    NOT NULL CONSTRAINT DF_CompanyFinancialInfo_Capital DEFAULT 0,
+    NumberOfShares      BIGINT           NOT NULL CONSTRAINT DF_CompanyFinancialInfo_Shares DEFAULT 0,
     CreatedAt           DATETIME2(7)     NOT NULL CONSTRAINT DF_CompanyFinancialInfo_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt           DATETIME2(7)     NOT NULL CONSTRAINT DF_CompanyFinancialInfo_UpdatedAt DEFAULT SYSUTCDATETIME(),
     CONSTRAINT PK_CompanyFinancialInfo PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_CompanyFinancialInfo_Company FOREIGN KEY (CompanyId) REFERENCES dbo.[Company] (Id) ON DELETE CASCADE,
-    CONSTRAINT UX_CompanyFinancialInfo_Company_Year UNIQUE (CompanyId, FiscalYear),
-    CONSTRAINT CK_CompanyFinancialInfo_FiscalYear CHECK (FiscalYear BETWEEN 1300 AND 1500),
-    CONSTRAINT CK_CompanyFinancialInfo_Capital CHECK (RegisteredCapital > 0),
-    CONSTRAINT CK_CompanyFinancialInfo_Shares CHECK (NumberOfShares > 0)
+    CONSTRAINT UX_CompanyFinancialInfo_Company_Year UNIQUE (CompanyId, FiscalYear)
 );
 GO
 CREATE NONCLUSTERED INDEX IX_CompanyFinancialInfo_CompanyId ON dbo.[CompanyFinancialInfo] (CompanyId);

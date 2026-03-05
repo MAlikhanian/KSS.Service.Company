@@ -95,44 +95,9 @@ namespace KSS.Service.Service
             company.Website = dto.Website;
             company.IsActive = dto.IsActive;
 
-            // Update Persian translation
-            var persianTranslation = await _dbContext.CompanyTranslations
-                .FirstOrDefaultAsync(ct => ct.CompanyId == id && ct.LanguageId == 12);
-
-            if (persianTranslation != null)
-            {
-                persianTranslation.Name = dto.CompanyPersianName;
-            }
-            else
-            {
-                _dbContext.CompanyTranslations.Add(new Entity.CompanyTranslation
-                {
-                    CompanyId = id,
-                    LanguageId = 12,
-                    Name = dto.CompanyPersianName
-                });
-            }
-
-            // Update English translation
-            if (!string.IsNullOrWhiteSpace(dto.CompanyLatinName))
-            {
-                var englishTranslation = await _dbContext.CompanyTranslations
-                    .FirstOrDefaultAsync(ct => ct.CompanyId == id && ct.LanguageId == 10);
-
-                if (englishTranslation != null)
-                {
-                    englishTranslation.Name = dto.CompanyLatinName;
-                }
-                else
-                {
-                    _dbContext.CompanyTranslations.Add(new Entity.CompanyTranslation
-                    {
-                        CompanyId = id,
-                        LanguageId = 10,
-                        Name = dto.CompanyLatinName
-                    });
-                }
-            }
+            // NOTE: Company name (CompanyTranslation) is NOT updated here.
+            // Names are managed exclusively through CompanyNameManagementService
+            // to keep CompanyTranslation in sync with CompanyNameHistory.
 
             await _dbContext.SaveChangesAsync();
 

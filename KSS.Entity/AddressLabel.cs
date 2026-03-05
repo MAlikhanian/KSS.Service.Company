@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace KSS.Entity
 {
@@ -11,6 +12,7 @@ namespace KSS.Entity
         public byte Id { get; set; }
         [Required]
         [MaxLength(10)]
+        [Unicode(false)]
         public string Code { get; set; } = string.Empty;
 
         public ICollection<AddressLabelTranslation> Translations { get; set; } = new List<AddressLabelTranslation>();
