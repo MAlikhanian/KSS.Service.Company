@@ -11,7 +11,7 @@ namespace KSS.Api.ServiceExtention
     {
         public static IServiceCollection AddCompanyServiceExtention(this IServiceCollection services, IConfiguration configuration)
         {
-            var connectionString = configuration["ConnectionString"];
+            var connectionString = configuration.GetSection("ConnectionStrings")["DefaultConnection"];
 
             services.AddDbContext<MainDbContext>(options => options.UseSqlServer(connectionString));
 

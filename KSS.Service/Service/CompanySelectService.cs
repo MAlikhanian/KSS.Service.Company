@@ -89,11 +89,12 @@ namespace KSS.Service.Service
                 return dto;
             });
 
-            // Filter by search query (match current name OR any historical name)
+            // Filter by search query (match current name, historical name, or nationalId)
             if (!string.IsNullOrWhiteSpace(query))
             {
                 result = result.Where(x =>
                     x.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    (x.NationalId != null && x.NationalId.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
                     x.NameHistory.Any(h => h.Name.Contains(query, StringComparison.OrdinalIgnoreCase)));
             }
 
