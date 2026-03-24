@@ -248,4 +248,5 @@ namespace KSS.Data.Configuration
             b.HasKey(x => new { x.AddressId, x.LanguageId });
         }
     }
+
 }
