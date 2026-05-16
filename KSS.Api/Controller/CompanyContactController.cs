@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using KSS.Dto;
+using KSS.Helper;
 using KSS.Helper.CustomAttribute;
 using KSS.Service.IService;
 
@@ -20,16 +22,18 @@ namespace KSS.Api.Controller
 
         /// <summary>GET /Api/CompanyContact/{companyId}?languageId=12</summary>
         [HttpGet("{companyId}")]
-        [HasPermission("Company.Read")]
+        [HasPermission("Company.Information.Read")]
         public async Task<ActionResult<CompanyContactDto>> GetAll(Guid companyId, [FromQuery] short languageId = 12)
         {
-            var result = await _service.GetContactDataAsync(companyId, languageId);
+            var result = await _service.GetContactDataAsync(companyId, GetCallerPersonId(), languageId);
+            if (result == null)
+                return NotFound(new { message = "Company not found." });
             return Ok(result);
         }
 
         // --- Email CRUD ---
         [HttpPost("{companyId}/Email")]
-        [HasPermission("Email.Create")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyEmailViewDto>> AddEmail(Guid companyId, [FromBody] CompanyEmailViewDto dto)
         {
             var result = await _service.AddEmailAsync(companyId, dto);
@@ -37,7 +41,7 @@ namespace KSS.Api.Controller
         }
 
         [HttpPut("Email/{emailId}")]
-        [HasPermission("Email.Update")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyEmailViewDto>> UpdateEmail(Guid emailId, [FromBody] CompanyEmailViewDto dto)
         {
             var result = await _service.UpdateEmailAsync(emailId, dto);
@@ -45,7 +49,7 @@ namespace KSS.Api.Controller
         }
 
         [HttpDelete("Email/{emailId}")]
-        [HasPermission("Email.Delete")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> DeleteEmail(Guid emailId)
         {
             await _service.DeleteEmailAsync(emailId);
@@ -54,7 +58,7 @@ namespace KSS.Api.Controller
 
         // --- Phone CRUD ---
         [HttpPost("{companyId}/Phone")]
-        [HasPermission("Phone.Create")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyPhoneViewDto>> AddPhone(Guid companyId, [FromBody] CompanyPhoneViewDto dto)
         {
             var result = await _service.AddPhoneAsync(companyId, dto);
@@ -62,7 +66,7 @@ namespace KSS.Api.Controller
         }
 
         [HttpPut("Phone/{phoneId}")]
-        [HasPermission("Phone.Update")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyPhoneViewDto>> UpdatePhone(Guid phoneId, [FromBody] CompanyPhoneViewDto dto)
         {
             var result = await _service.UpdatePhoneAsync(phoneId, dto);
@@ -70,7 +74,7 @@ namespace KSS.Api.Controller
         }
 
         [HttpDelete("Phone/{phoneId}")]
-        [HasPermission("Phone.Delete")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> DeletePhone(Guid phoneId)
         {
             await _service.DeletePhoneAsync(phoneId);
@@ -79,7 +83,7 @@ namespace KSS.Api.Controller
 
         // --- Address CRUD ---
         [HttpPost("{companyId}/Address")]
-        [HasPermission("Address.Create")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyAddressViewDto>> AddAddress(Guid companyId, [FromBody] CompanyAddressViewDto dto, [FromQuery] short languageId = 12)
         {
             var result = await _service.AddAddressAsync(companyId, dto, languageId);
@@ -87,7 +91,7 @@ namespace KSS.Api.Controller
         }
 
         [HttpPut("Address/{addressId}")]
-        [HasPermission("Address.Update")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyAddressViewDto>> UpdateAddress(Guid addressId, [FromBody] CompanyAddressViewDto dto, [FromQuery] short languageId = 12)
         {
             var result = await _service.UpdateAddressAsync(addressId, dto, languageId);
@@ -95,11 +99,20 @@ namespace KSS.Api.Controller
         }
 
         [HttpDelete("Address/{addressId}")]
-        [HasPermission("Address.Delete")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> DeleteAddress(Guid addressId)
         {
             await _service.DeleteAddressAsync(addressId);
             return NoContent();
+        }
+
+        private Guid GetCallerPersonId()
+        {
+            var raw = User.FindFirstValue("personId")
+                   ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(raw) || !Guid.TryParse(raw, out var personId))
+                throw new BusinessRuleException("Caller PersonId not found on the JWT.");
+            return personId;
         }
     }
 }

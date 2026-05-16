@@ -8,15 +8,15 @@ namespace KSS.Service.Service
     public class CompanyOperationService : ICompanyOperationService
     {
         private readonly ICompanyService _companyService;
-        private readonly ICompanyTranslationService _translationService;
-        private readonly ICompanyNameHistoryService _nameHistoryService;
-        private readonly ICompanyNameHistoryTranslationService _nameHistoryTranslationService;
+        private readonly ITranslationService _translationService;
+        private readonly INameHistoryService _nameHistoryService;
+        private readonly INameHistoryTranslationService _nameHistoryTranslationService;
 
         public CompanyOperationService(
             ICompanyService companyService,
-            ICompanyTranslationService translationService,
-            ICompanyNameHistoryService nameHistoryService,
-            ICompanyNameHistoryTranslationService nameHistoryTranslationService)
+            ITranslationService translationService,
+            INameHistoryService nameHistoryService,
+            INameHistoryTranslationService nameHistoryTranslationService)
         {
             _companyService = companyService;
             _translationService = translationService;
@@ -34,7 +34,7 @@ namespace KSS.Service.Service
                 var companyDto = new CompanyDto
                 {
                     Id = dto.Id,
-                    CompanyTypeId = dto.CompanyTypeId,
+                    LegalFormId = dto.LegalFormId,
                     IndustryId = dto.IndustryId,
                     RegistrationDate = dto.RegistrationDate,
                     RegistrationNo = dto.RegistrationNo,
@@ -58,7 +58,7 @@ namespace KSS.Service.Service
                 {
                     foreach (var t in dto.Translations)
                     {
-                        await _translationService.AddDtoAsync(new CompanyTranslationDto
+                        await _translationService.AddDtoAsync(new TranslationDto
                         {
                             CompanyId = companyDto.Id,
                             LanguageId = t.LanguageId,
@@ -78,7 +78,7 @@ namespace KSS.Service.Service
                     }
 
                     var nameHistoryId = Guid.NewGuid();
-                    var nameHistoryDto = new CompanyNameHistoryDto
+                    var nameHistoryDto = new NameHistoryDto
                     {
                         Id = nameHistoryId,
                         CompanyId = companyDto.Id,
@@ -94,9 +94,9 @@ namespace KSS.Service.Service
                     {
                         foreach (var t in dto.NameHistory.Translations)
                         {
-                            await _nameHistoryTranslationService.AddDtoAsync(new CompanyNameHistoryTranslationDto
+                            await _nameHistoryTranslationService.AddDtoAsync(new NameHistoryTranslationDto
                             {
-                                CompanyNameHistoryId = nameHistoryId,
+                                NameHistoryId = nameHistoryId,
                                 LanguageId = t.LanguageId,
                                 Name = t.Name,
                                 ShortName = t.ShortName

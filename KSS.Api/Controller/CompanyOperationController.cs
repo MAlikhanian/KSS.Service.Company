@@ -7,7 +7,7 @@ namespace KSS.Api.Controller
 {
     [ApiController]
     [Route("Api/CompanyOperation")]
-    [HasPermission("Company.Create")]
+    [HasPermission("Company.Information.Modify")]
     public class CompanyOperationController : ControllerBase
     {
         private readonly ICompanyOperationService _operationService;

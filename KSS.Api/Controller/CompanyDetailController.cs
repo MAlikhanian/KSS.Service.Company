@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using KSS.Dto;
+using KSS.Helper;
 using KSS.Helper.CustomAttribute;
 using KSS.Service.IService;
 
@@ -9,7 +11,7 @@ namespace KSS.Api.Controller
     [ApiController]
     [Route("Api/[controller]")]
     [Authorize]
-    [HasPermission("Company.Read")]
+    [HasPermission("Company.Information.Read")]
     public class CompanyDetailController : ControllerBase
     {
         private readonly ICompanyDetailService _service;
@@ -22,25 +24,34 @@ namespace KSS.Api.Controller
         [HttpGet("{id}")]
         public async Task<ActionResult<CompanyDetailDto>> GetById(Guid id, [FromQuery] short languageId = 12)
         {
-            var result = await _service.GetByIdAsync(id, languageId);
+            var result = await _service.GetByIdAsync(id, GetCallerPersonId(), languageId);
             if (result == null)
                 return NotFound(new { message = "Company not found." });
             return Ok(result);
         }
 
         [HttpPut("{id}")]
-        [HasPermission("Company.Update")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult<CompanyDetailDto>> Update(Guid id, [FromBody] CompanyDetailDto dto)
         {
             try
             {
-                var result = await _service.UpdateAsync(id, dto);
+                var result = await _service.UpdateAsync(id, GetCallerPersonId(), dto);
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
             }
+        }
+
+        private Guid GetCallerPersonId()
+        {
+            var raw = User.FindFirstValue("personId")
+                   ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(raw) || !Guid.TryParse(raw, out var personId))
+                throw new BusinessRuleException("Caller PersonId not found on the JWT.");
+            return personId;
         }
     }
 }

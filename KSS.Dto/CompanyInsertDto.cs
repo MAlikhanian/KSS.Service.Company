@@ -4,14 +4,14 @@ namespace KSS.Dto
     {
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public List<CompanyNameHistoryTranslationDto> Translations { get; set; } = new List<CompanyNameHistoryTranslationDto>();
+        public List<NameHistoryTranslationDto> Translations { get; set; } = new List<NameHistoryTranslationDto>();
     }
 
     public class CompanyInsertDto
     {
         // Company fields
         public Guid Id { get; set; }
-        public byte CompanyTypeId { get; set; }
+        public byte LegalFormId { get; set; }
         public short? IndustryId { get; set; }
         public DateTime RegistrationDate { get; set; }
         public string RegistrationNo { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace KSS.Dto
         public bool IsActive { get; set; } = true;
 
         // Company Translations
-        public List<CompanyTranslationDto> Translations { get; set; } = new List<CompanyTranslationDto>();
+        public List<TranslationDto> Translations { get; set; } = new List<TranslationDto>();
 
         // Name History (typically one entry for initial name)
         public CompanyNameHistoryItemDto? NameHistory { get; set; }

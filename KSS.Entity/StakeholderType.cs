@@ -15,7 +15,15 @@ namespace KSS.Entity
         [Unicode(false)]
         public string Code { get; set; } = string.Empty; // کد
 
+        public Guid CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? DeletedBy { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public bool IsActive { get; set; } = true;
+
         public ICollection<StakeholderTypeTranslation> Translations { get; set; } = new List<StakeholderTypeTranslation>();
-        public ICollection<CompanyStakeholder> Stakeholders { get; set; } = new List<CompanyStakeholder>();
+        public ICollection<Stakeholder> Stakeholders { get; set; } = new List<Stakeholder>();
     }
 }

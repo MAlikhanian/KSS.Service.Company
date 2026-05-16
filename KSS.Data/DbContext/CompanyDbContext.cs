@@ -6,8 +6,8 @@ namespace KSS.Data.DbContexts
     public partial class MainDbContext
     {
         // Lookup tables
-        public DbSet<CompanyType> CompanyTypes { get; set; }
-        public DbSet<CompanyTypeTranslation> CompanyTypeTranslations { get; set; }
+        public DbSet<LegalForm> LegalForms { get; set; }
+        public DbSet<LegalFormTranslation> LegalFormTranslations { get; set; }
         public DbSet<Industry> Industries { get; set; }
         public DbSet<IndustryTranslation> IndustryTranslations { get; set; }
         public DbSet<StakeholderType> StakeholderTypes { get; set; }
@@ -21,12 +21,12 @@ namespace KSS.Data.DbContexts
 
         // Main entities
         public DbSet<Company> Companies { get; set; }
-        public DbSet<CompanyTranslation> CompanyTranslations { get; set; }
-        public DbSet<CompanyNameHistory> CompanyNameHistories { get; set; }
-        public DbSet<CompanyNameHistoryTranslation> CompanyNameHistoryTranslations { get; set; }
-        public DbSet<CompanyStakeholder> CompanyStakeholders { get; set; }
-        public DbSet<CompanyStakeholderHistory> CompanyStakeholderHistories { get; set; }
-        public DbSet<CompanyFinancialInfo> CompanyFinancialInfos { get; set; }
+        public DbSet<Translation> Translations { get; set; }
+        public DbSet<NameHistory> NameHistories { get; set; }
+        public DbSet<NameHistoryTranslation> NameHistoryTranslations { get; set; }
+        public DbSet<Stakeholder> Stakeholders { get; set; }
+        public DbSet<StakeholderHistory> StakeholderHistories { get; set; }
+        public DbSet<FinancialInfo> FinancialInfos { get; set; }
 
         // Contact data
         public DbSet<Email> Emails { get; set; }

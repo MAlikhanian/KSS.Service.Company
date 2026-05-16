@@ -9,7 +9,7 @@ namespace KSS.Entity
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid Id { get; set; }
-        public byte CompanyTypeId { get; set; }
+        public byte LegalFormId { get; set; }
         public short? IndustryId { get; set; } // Industry. NULL = unknown at creation (often set after verification/onboarding). If your domain always requires industry: make NOT NULL; or add Industry.Code='Unknown' and default to it.
         [Column(TypeName = "DATE")]
         public DateTime RegistrationDate { get; set; } // تاریخ ثبت
@@ -40,17 +40,21 @@ namespace KSS.Entity
         [Column(TypeName = "VARCHAR(512)")]
         public string? LogoUrl { get; set; } // آدرس لوگو
         public bool IsActive { get; set; } = true; // فعال
+        public Guid CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? DeletedBy { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
-        [ForeignKey(nameof(CompanyTypeId))]
-        public CompanyType CompanyType { get; set; } = null!;
+        [ForeignKey(nameof(LegalFormId))]
+        public LegalForm LegalForm { get; set; } = null!;
         [ForeignKey(nameof(IndustryId))]
         public Industry? Industry { get; set; }
 
-        public ICollection<CompanyTranslation> Translations { get; set; } = new List<CompanyTranslation>();
-        public ICollection<CompanyNameHistory> NameHistories { get; set; } = new List<CompanyNameHistory>();
-        public ICollection<CompanyStakeholder> Stakeholders { get; set; } = new List<CompanyStakeholder>();
+        public ICollection<Translation> Translations { get; set; } = new List<Translation>();
+        public ICollection<NameHistory> NameHistories { get; set; } = new List<NameHistory>();
+        public ICollection<Stakeholder> Stakeholders { get; set; } = new List<Stakeholder>();
         public ICollection<Email> Emails { get; set; } = new List<Email>();
         public ICollection<Phone> Phones { get; set; } = new List<Phone>();
         public ICollection<Address> Addresses { get; set; } = new List<Address>();

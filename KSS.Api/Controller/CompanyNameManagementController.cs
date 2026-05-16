@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Helper.CustomAttribute;
@@ -12,7 +12,7 @@ namespace KSS.Api.Controller
     /// </summary>
     [ApiController]
     [Route("Api/CompanyNameManagement")]
-    [PermissionGroup("Company")]
+    [PermissionGroup("Information")]
     public class CompanyNameManagementController : ControllerBase
     {
         private readonly ICompanyNameManagementService _managementService;
@@ -24,10 +24,10 @@ namespace KSS.Api.Controller
 
         /// <summary>
         /// Add a new name history entry with all translations.
-        /// Backend handles: closing previous current entry, syncing to CompanyTranslation.
+        /// Backend handles: closing previous current entry, syncing to Translation.
         /// </summary>
         [HttpPost("AddNameWithTranslations")]
-        [HasPermission("Company.Create")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> AddNameWithTranslations([FromBody] AddNameWithTranslationsDto dto)
         {
             var result = await _managementService.AddNameWithTranslationsAsync(dto);
@@ -39,10 +39,10 @@ namespace KSS.Api.Controller
 
         /// <summary>
         /// Upsert translations for an existing name history entry.
-        /// Backend handles: add vs update per language, syncing to CompanyTranslation.
+        /// Backend handles: add vs update per language, syncing to Translation.
         /// </summary>
         [HttpPut("UpsertTranslations")]
-        [HasPermission("Company.Update")]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> UpsertTranslations([FromBody] UpsertNameTranslationsDto dto)
         {
             await _managementService.UpsertTranslationsAsync(dto);
@@ -54,10 +54,10 @@ namespace KSS.Api.Controller
         /// Rules: only newest, not first, not the only entry.
         /// </summary>
         [HttpDelete("DeleteNameHistory")]
-        [HasPermission("Company.Delete")]
-        public ActionResult DeleteNameHistory([FromBody] CompanyNameHistory item)
+        [HasPermission("Company.Information.Modify")]
+        public ActionResult DeleteNameHistory([FromBody] NameHistoryDeleteDto dto)
         {
-            var result = _managementService.DeleteNameHistory(item);
+            var result = _managementService.DeleteNameHistory(dto.Id, dto.CompanyId);
             if (!result.Success)
                 return BadRequest(new { statusCode = 400, message = result.Message });
 
@@ -66,10 +66,10 @@ namespace KSS.Api.Controller
 
         /// <summary>
         /// Remove a single translation from a name history entry.
-        /// Backend handles: last-translation protection, CompanyTranslation sync.
+        /// Backend handles: last-translation protection, Translation sync.
         /// </summary>
         [HttpDelete("RemoveTranslation")]
-        [HasPermission("Company.Delete")]
+        [HasPermission("Company.Information.Modify")]
         public ActionResult RemoveTranslation([FromBody] RemoveTranslationDto dto)
         {
             var result = _managementService.RemoveTranslation(dto);

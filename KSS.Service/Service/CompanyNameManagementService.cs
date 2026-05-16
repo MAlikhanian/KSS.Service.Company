@@ -8,27 +8,27 @@ namespace KSS.Service.Service
 {
     /// <summary>
     /// ManagementService that orchestrates company name operations across multiple tables:
-    /// - CompanyNameHistory (via ICompanyNameHistoryService)
-    /// - CompanyNameHistoryTranslation (via ICompanyNameHistoryTranslationService + repository)
-    /// - CompanyTranslation (via ICompanyTranslationRepository)
+    /// - NameHistory (via INameHistoryService)
+    /// - NameHistoryTranslation (via INameHistoryTranslationService + repository)
+    /// - Translation (via ITranslationRepository)
     ///
     /// Single-table CRUD remains in the individual services.
     /// This service handles cross-table sync and multi-step business logic.
     /// </summary>
     public class CompanyNameManagementService : ICompanyNameManagementService
     {
-        private readonly ICompanyNameHistoryService _nameHistoryService;
-        private readonly ICompanyNameHistoryTranslationService _translationService;
-        private readonly ICompanyNameHistoryTranslationRepository _translationRepository;
-        private readonly ICompanyNameHistoryRepository _nameHistoryRepository;
-        private readonly ICompanyTranslationRepository _companyTranslationRepository;
+        private readonly INameHistoryService _nameHistoryService;
+        private readonly INameHistoryTranslationService _translationService;
+        private readonly INameHistoryTranslationRepository _translationRepository;
+        private readonly INameHistoryRepository _nameHistoryRepository;
+        private readonly ITranslationRepository _companyTranslationRepository;
 
         public CompanyNameManagementService(
-            ICompanyNameHistoryService nameHistoryService,
-            ICompanyNameHistoryTranslationService translationService,
-            ICompanyNameHistoryTranslationRepository translationRepository,
-            ICompanyNameHistoryRepository nameHistoryRepository,
-            ICompanyTranslationRepository companyTranslationRepository)
+            INameHistoryService nameHistoryService,
+            INameHistoryTranslationService translationService,
+            INameHistoryTranslationRepository translationRepository,
+            INameHistoryRepository nameHistoryRepository,
+            ITranslationRepository companyTranslationRepository)
         {
             _nameHistoryService = nameHistoryService;
             _translationService = translationService;
@@ -41,12 +41,12 @@ namespace KSS.Service.Service
         /// Add a new name history entry with all translations in one operation.
         /// 1) Creates the name history record (single-table service handles closing previous current)
         /// 2) Creates each translation
-        /// 3) Syncs to CompanyTranslation if this is the current name
+        /// 3) Syncs to Translation if this is the current name
         /// </summary>
         public async Task<ServiceResult> AddNameWithTranslationsAsync(AddNameWithTranslationsDto dto)
         {
             // 1) Create the name history record — check result for business rule violations
-            var nameHistoryDto = new CompanyNameHistoryDto
+            var nameHistoryDto = new NameHistoryDto
             {
                 Id = dto.Id,
                 CompanyId = dto.CompanyId,
@@ -62,12 +62,12 @@ namespace KSS.Service.Service
             {
                 if (!string.IsNullOrWhiteSpace(tr.Name))
                 {
-                    tr.CompanyNameHistoryId = dto.Id;
+                    tr.NameHistoryId = dto.Id;
                     await _translationService.AddDtoAsync(tr);
                 }
             }
 
-            // 3) Sync CompanyTranslation with the current name (always, to stay consistent)
+            // 3) Sync Translation with the current name (always, to stay consistent)
             SyncCurrentNameToCompanyTranslation(dto.CompanyId);
 
             return ServiceResult.Ok();
@@ -75,20 +75,20 @@ namespace KSS.Service.Service
 
         /// <summary>
         /// Upsert translations for an existing name history entry.
-        /// Determines add vs update per language, then syncs to CompanyTranslation.
+        /// Determines add vs update per language, then syncs to Translation.
         /// </summary>
         public async Task UpsertTranslationsAsync(UpsertNameTranslationsDto dto)
         {
             // Get existing translations for this name history entry
             var existing = _translationRepository.ToList(
-                t => t.CompanyNameHistoryId == dto.NameHistoryId);
+                t => t.NameHistoryId == dto.NameHistoryId);
             var existingLangIds = new HashSet<short>(existing.Select(t => t.LanguageId));
 
             foreach (var tr in dto.Translations)
             {
                 if (string.IsNullOrWhiteSpace(tr.Name)) continue;
 
-                tr.CompanyNameHistoryId = dto.NameHistoryId;
+                tr.NameHistoryId = dto.NameHistoryId;
 
                 if (existingLangIds.Contains(tr.LanguageId))
                 {
@@ -100,7 +100,7 @@ namespace KSS.Service.Service
                 }
             }
 
-            // Sync CompanyTranslation with the current name (always, to stay consistent)
+            // Sync Translation with the current name (always, to stay consistent)
             var nameHistory = _nameHistoryRepository.SingleOrDefault(
                 h => h.Id == dto.NameHistoryId);
 
@@ -111,30 +111,30 @@ namespace KSS.Service.Service
         }
 
         /// <summary>
-        /// Delete a name history entry and sync CompanyTranslation with the new current name.
+        /// Delete a name history entry and sync Translation with the new current name.
         /// After delete, the previous entry becomes current — its translations must be synced.
         /// </summary>
-        public ServiceResult DeleteNameHistory(CompanyNameHistory item)
+        public ServiceResult DeleteNameHistory(Guid id, Guid companyId)
         {
-            var result = _nameHistoryService.DeleteNameHistory(item);
+            var result = _nameHistoryService.DeleteNameHistory(id, companyId);
             if (!result.Success) return result;
 
             // After delete, the previous entry is now current (EndDate was cleared).
-            // Sync its translations to CompanyTranslation.
-            SyncCurrentNameToCompanyTranslation(item.CompanyId);
+            // Sync its translations to Translation.
+            SyncCurrentNameToCompanyTranslation(companyId);
 
             return ServiceResult.Ok();
         }
 
         /// <summary>
         /// Remove a single translation from a name history entry.
-        /// Returns Fail if it's the last translation. Removes from CompanyTranslation if current.
+        /// Returns Fail if it's the last translation. Removes from Translation if current.
         /// </summary>
         public ServiceResult RemoveTranslation(RemoveTranslationDto dto)
         {
             // Prevent deleting the last translation
             var translationCount = _translationRepository.Count(
-                t => t.CompanyNameHistoryId == dto.CompanyNameHistoryId);
+                t => t.NameHistoryId == dto.NameHistoryId);
             if (translationCount <= 1)
             {
                 return ServiceResult.Fail(
@@ -143,7 +143,7 @@ namespace KSS.Service.Service
 
             // Find and remove the translation entity
             var entity = _translationRepository.SingleOrDefault(
-                t => t.CompanyNameHistoryId == dto.CompanyNameHistoryId && t.LanguageId == dto.LanguageId);
+                t => t.NameHistoryId == dto.NameHistoryId && t.LanguageId == dto.LanguageId);
 
             if (entity == null)
             {
@@ -153,9 +153,9 @@ namespace KSS.Service.Service
 
             _translationService.Remove(entity);
 
-            // If this name history is the current one, also remove from CompanyTranslation
+            // If this name history is the current one, also remove from Translation
             var nameHistory = _nameHistoryRepository.SingleOrDefault(
-                h => h.Id == dto.CompanyNameHistoryId);
+                h => h.Id == dto.NameHistoryId);
 
             if (nameHistory != null && nameHistory.EndDate == null)
             {
@@ -172,9 +172,9 @@ namespace KSS.Service.Service
         }
 
         /// <summary>
-        /// Sync CompanyTranslation with the current name history entry's translations.
+        /// Sync Translation with the current name history entry's translations.
         /// Finds the current entry (EndDate IS NULL), reads all its translations,
-        /// and upserts each one into CompanyTranslation.
+        /// and upserts each one into Translation.
         /// </summary>
         private void SyncCurrentNameToCompanyTranslation(Guid companyId)
         {
@@ -186,7 +186,7 @@ namespace KSS.Service.Service
 
             // Get all translations for the current entry
             var translations = _translationRepository.ToList(
-                t => t.CompanyNameHistoryId == currentEntry.Id);
+                t => t.NameHistoryId == currentEntry.Id);
 
             foreach (var tr in translations)
             {
@@ -195,7 +195,7 @@ namespace KSS.Service.Service
         }
 
         /// <summary>
-        /// Upsert the CompanyTranslation so the company's primary name stays in sync
+        /// Upsert the Translation so the company's primary name stays in sync
         /// with the current name history entry.
         /// </summary>
         private void SyncToCompanyTranslation(Guid companyId, short languageId, string name, string? shortName)
@@ -211,7 +211,7 @@ namespace KSS.Service.Service
             }
             else
             {
-                var newTranslation = new CompanyTranslation
+                var newTranslation = new Translation
                 {
                     CompanyId = companyId,
                     LanguageId = languageId,

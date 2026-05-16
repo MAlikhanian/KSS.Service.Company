@@ -11,6 +11,6 @@ namespace KSS.Dto
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public string? Description { get; set; }
-        public List<CompanyNameHistoryTranslationDto> Translations { get; set; } = new();
+        public List<NameHistoryTranslationDto> Translations { get; set; } = new();
     }
 }

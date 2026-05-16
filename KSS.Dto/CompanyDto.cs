@@ -3,7 +3,7 @@ namespace KSS.Dto
     public class CompanyDto
     {
         public Guid Id { get; set; }
-        public byte CompanyTypeId { get; set; }
+        public byte LegalFormId { get; set; }
         public short? IndustryId { get; set; }
         public DateTime RegistrationDate { get; set; }
         public string RegistrationNo { get; set; } = string.Empty;

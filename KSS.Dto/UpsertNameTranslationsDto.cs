@@ -8,6 +8,6 @@ namespace KSS.Dto
     {
         public Guid NameHistoryId { get; set; }
         public Guid CompanyId { get; set; }
-        public List<CompanyNameHistoryTranslationDto> Translations { get; set; } = new();
+        public List<NameHistoryTranslationDto> Translations { get; set; } = new();
     }
 }

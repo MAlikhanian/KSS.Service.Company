@@ -51,6 +51,8 @@ namespace KSS.Helper
                         return jsonElement.GetDateTime();
                     case DataType.Boolean:
                         return jsonElement.GetBoolean();
+                    case DataType.Guid:
+                        return jsonElement.GetGuid();
                 }
             }
             else

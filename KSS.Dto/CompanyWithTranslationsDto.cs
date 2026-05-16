@@ -4,7 +4,7 @@ namespace KSS.Dto
     {
         // Company fields
         public Guid Id { get; set; }
-        public byte CompanyTypeId { get; set; }
+        public byte LegalFormId { get; set; }
         public short? IndustryId { get; set; }
         public DateTime RegistrationDate { get; set; }
         public string RegistrationNo { get; set; } = string.Empty;
@@ -20,6 +20,6 @@ namespace KSS.Dto
         public bool IsActive { get; set; } = true;
 
         // Translations
-        public List<CompanyTranslationDto> Translations { get; set; } = new List<CompanyTranslationDto>();
+        public List<TranslationDto> Translations { get; set; } = new List<TranslationDto>();
     }
 }

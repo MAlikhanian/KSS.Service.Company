@@ -9,7 +9,7 @@ namespace KSS.Api.Controller
     [ApiController]
     [Route("Api/[controller]")]
     [Authorize]
-    [HasPermission("Company.Read")]
+    [HasPermission("Company.Information.Read")]
     public class CompanySelectController : ControllerBase
     {
         private readonly ICompanySelectService _service;

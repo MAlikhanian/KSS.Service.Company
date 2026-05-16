@@ -16,8 +16,8 @@ namespace KSS.Api.ServiceExtention
             services.AddDbContext<MainDbContext>(options => options.UseSqlServer(connectionString));
 
             // Lookup services
-            services.AddScoped<ICompanyTypeRepository, CompanyTypeRepository>();
-            services.AddScoped<ICompanyTypeService, CompanyTypeService>();
+            services.AddScoped<ILegalFormRepository, LegalFormRepository>();
+            services.AddScoped<ILegalFormService, LegalFormService>();
             services.AddScoped<IIndustryRepository, IndustryRepository>();
             services.AddScoped<IIndustryService, IndustryService>();
             services.AddScoped<IStakeholderTypeRepository, StakeholderTypeRepository>();
@@ -38,22 +38,23 @@ namespace KSS.Api.ServiceExtention
             // Main Company services
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ICompanyService, CompanyService>();
-            services.AddScoped<ICompanyTranslationRepository, CompanyTranslationRepository>();
-            services.AddScoped<ICompanyTranslationService, CompanyTranslationService>();
-            services.AddScoped<ICompanyNameHistoryRepository, CompanyNameHistoryRepository>();
-            services.AddScoped<ICompanyNameHistoryService, CompanyNameHistoryService>();
-            services.AddScoped<ICompanyNameHistoryTranslationRepository, CompanyNameHistoryTranslationRepository>();
-            services.AddScoped<ICompanyNameHistoryTranslationService, CompanyNameHistoryTranslationService>();
+            services.AddScoped<ITranslationRepository, TranslationRepository>();
+            services.AddScoped<ITranslationService, TranslationService>();
+            services.AddScoped<INameHistoryRepository, NameHistoryRepository>();
+            services.AddScoped<INameHistoryService, NameHistoryService>();
+            services.AddScoped<INameHistoryTranslationRepository, NameHistoryTranslationRepository>();
+            services.AddScoped<INameHistoryTranslationService, NameHistoryTranslationService>();
             services.AddScoped<ICompanyNameManagementService, CompanyNameManagementService>();
             services.AddScoped<ICompanyOperationService, CompanyOperationService>();
             services.AddScoped<ICompanySelectService, CompanySelectService>();
             services.AddScoped<ICompanyDetailService, CompanyDetailService>();
-            services.AddScoped<ICompanyStakeholderRepository, CompanyStakeholderRepository>();
-            services.AddScoped<ICompanyStakeholderService, CompanyStakeholderService>();
-            services.AddScoped<ICompanyStakeholderHistoryRepository, CompanyStakeholderHistoryRepository>();
-            services.AddScoped<ICompanyStakeholderHistoryService, CompanyStakeholderHistoryService>();
-            services.AddScoped<ICompanyFinancialInfoRepository, CompanyFinancialInfoRepository>();
-            services.AddScoped<ICompanyFinancialInfoService, CompanyFinancialInfoService>();
+            services.AddScoped<ICompanyReadViewManagementService, CompanyReadViewManagementService>();
+            services.AddScoped<IStakeholderRepository, StakeholderRepository>();
+            services.AddScoped<IStakeholderService, StakeholderService>();
+            services.AddScoped<IStakeholderHistoryRepository, StakeholderHistoryRepository>();
+            services.AddScoped<IStakeholderHistoryService, StakeholderHistoryService>();
+            services.AddScoped<IFinancialInfoRepository, FinancialInfoRepository>();
+            services.AddScoped<IFinancialInfoService, FinancialInfoService>();
 
             // Contact data services
             services.AddScoped<IEmailRepository, EmailRepository>();
@@ -65,6 +66,15 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IAddressTranslationRepository, AddressTranslationRepository>();
             services.AddScoped<IAddressTranslationService, AddressTranslationService>();
             services.AddScoped<ICompanyContactService, CompanyContactService>();
+
+            // Access + RoleAccess (per-section access on companies)
+            services.AddScoped<IAccessRepository, AccessRepository>();
+            services.AddScoped<IAccessService, AccessService>();
+            services.AddScoped<IRoleAccessRepository, RoleAccessRepository>();
+            services.AddScoped<IRoleAccessService, RoleAccessService>();
+
+            // Required so AccessService can read JWT claims for the caller's roleIds.
+            services.AddHttpContextAccessor();
 
             return services;
         }

@@ -22,30 +22,27 @@ namespace KSS.Helper.Authorization
     {
         private readonly IAuthorizationService _authorizationService;
 
-        // Map action names to CRUD operations
+        // Map action names to section-level operations (Read or Manage).
+        // Section-level permissions: <Module>.<Section>.<Read|Manage>.
         private static readonly Dictionary<string, string> ActionToOperation = new(StringComparer.OrdinalIgnoreCase)
         {
             // Read operations
-            { "FindAsync",            "Read" },
-            { "SingleAsync",          "Read" },
-            { "ToListAllAsync",       "Read" },
-            { "ToListAsync",          "Read" },
-            { "ToListByFilterAsync",  "Read" },
-            { "ToListDtoAsync",       "Read" },
+            { "Find",                "Read" }, { "FindAsync",            "Read" },
+            { "Single",              "Read" }, { "SingleAsync",          "Read" },
+            { "ToListAll",           "Read" }, { "ToListAllAsync",       "Read" },
+            { "ToList",              "Read" }, { "ToListAsync",          "Read" },
+            { "ToListByFilter",      "Read" }, { "ToListByFilterAsync",  "Read" },
+            { "ToListDto",           "Read" }, { "ToListDtoAsync",       "Read" },
 
-            // Create operations
-            { "AddAsync",             "Create" },
-            { "AddDtoAsync",          "Create" },
-            { "AddRangeAsync",        "Create" },
-
-            // Update operations
-            { "Update",               "Update" },
-            { "UpdateDto",            "Update" },
-            { "UpdateRange",          "Update" },
-
-            // Delete operations
-            { "Remove",               "Delete" },
-            { "RemoveRange",          "Delete" },
+            // Write operations all map to Modify (Create/Update/Delete merged).
+            { "Add",                 "Modify" }, { "AddAsync",             "Modify" },
+            { "AddDto",              "Modify" }, { "AddDtoAsync",          "Modify" },
+            { "AddRange",            "Modify" }, { "AddRangeAsync",        "Modify" },
+            { "Update",               "Modify" },
+            { "UpdateDto",            "Modify" },
+            { "UpdateRange",          "Modify" },
+            { "Remove",               "Modify" },
+            { "RemoveRange",          "Modify" },
         };
 
         public PermissionAuthorizationFilter(IAuthorizationService authorizationService)
@@ -69,8 +66,9 @@ namespace KSS.Helper.Authorization
             if (!ActionToOperation.TryGetValue(actionName, out var operation))
                 return; // Unknown action = skip (let other auth handle it)
 
-            // Build the required permission: e.g., "Email.Create"
-            var requiredPermission = $"{permissionGroup.Group}.{operation}";
+            // Build the required permission: e.g., "Company.Email.Create"
+            const string ServicePrefix = "Company";
+            var requiredPermission = $"{ServicePrefix}.{permissionGroup.Group}.{operation}";
 
             // Check authorization
             var requirement = new PermissionRequirement(requiredPermission);

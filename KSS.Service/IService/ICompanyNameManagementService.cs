@@ -6,7 +6,7 @@ namespace KSS.Service.IService
 {
     /// <summary>
     /// ManagementService for company name operations that span multiple tables:
-    /// CompanyNameHistory, CompanyNameHistoryTranslation, and CompanyTranslation.
+    /// NameHistory, NameHistoryTranslation, and Translation.
     ///
     /// The "ManagementService" suffix indicates this service orchestrates across multiple tables.
     /// Single-table CRUD is handled by the individual table services.
@@ -21,7 +21,7 @@ namespace KSS.Service.IService
 
         /// <summary>
         /// Upsert translations for an existing name history entry.
-        /// Determines add vs update per language, syncs to CompanyTranslation.
+        /// Determines add vs update per language, syncs to Translation.
         /// </summary>
         Task UpsertTranslationsAsync(UpsertNameTranslationsDto dto);
 
@@ -29,7 +29,7 @@ namespace KSS.Service.IService
         /// Delete a name history entry with business rule validation.
         /// Returns Fail if: only entry, first entry, or not the newest entry.
         /// </summary>
-        ServiceResult DeleteNameHistory(CompanyNameHistory item);
+        ServiceResult DeleteNameHistory(Guid id, Guid companyId);
 
         /// <summary>
         /// Remove a single translation from a name history entry.

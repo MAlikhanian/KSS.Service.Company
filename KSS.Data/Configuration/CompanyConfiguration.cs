@@ -5,20 +5,20 @@ using KSS.Entity;
 
 namespace KSS.Data.Configuration
 {
-    public class CompanyTypeConfiguration : IEntityTypeConfiguration<CompanyType>
+    public class LegalFormConfiguration : IEntityTypeConfiguration<LegalForm>
     {
-        public void Configure(EntityTypeBuilder<CompanyType> b)
+        public void Configure(EntityTypeBuilder<LegalForm> b)
         {
-            b.HasMany(x => x.Translations).WithOne(x => x.CompanyType).HasForeignKey(x => x.CompanyTypeId).OnDelete(DeleteBehavior.Cascade);
-            b.HasMany(x => x.Companies).WithOne(x => x.CompanyType).HasForeignKey(x => x.CompanyTypeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasMany(x => x.Translations).WithOne(x => x.LegalForm).HasForeignKey(x => x.LegalFormId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.Companies).WithOne(x => x.LegalForm).HasForeignKey(x => x.LegalFormId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 
-    public class CompanyTypeTranslationConfiguration : IEntityTypeConfiguration<CompanyTypeTranslation>
+    public class LegalFormTranslationConfiguration : IEntityTypeConfiguration<LegalFormTranslation>
     {
-        public void Configure(EntityTypeBuilder<CompanyTypeTranslation> b)
+        public void Configure(EntityTypeBuilder<LegalFormTranslation> b)
         {
-            b.HasKey(x => new { x.CompanyTypeId, x.LanguageId });
+            b.HasKey(x => new { x.LegalFormId, x.LanguageId });
         }
     }
 
@@ -62,8 +62,8 @@ namespace KSS.Data.Configuration
         {
             // Disable OUTPUT clause because table has triggers (TR_Company_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
-            b.HasOne(x => x.CompanyType).WithMany(x => x.Companies).HasForeignKey(x => x.CompanyTypeId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.LegalForm).WithMany(x => x.Companies).HasForeignKey(x => x.LegalFormId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(x => x.Industry).WithMany(x => x.Companies).HasForeignKey(x => x.IndustryId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Translations).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
             b.HasMany(x => x.NameHistories).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
@@ -74,38 +74,38 @@ namespace KSS.Data.Configuration
         }
     }
 
-    public class CompanyTranslationConfiguration : IEntityTypeConfiguration<CompanyTranslation>
+    public class TranslationConfiguration : IEntityTypeConfiguration<Translation>
     {
-        public void Configure(EntityTypeBuilder<CompanyTranslation> b)
+        public void Configure(EntityTypeBuilder<Translation> b)
         {
             b.HasKey(x => new { x.CompanyId, x.LanguageId });
         }
     }
 
-    public class CompanyNameHistoryConfiguration : IEntityTypeConfiguration<CompanyNameHistory>
+    public class NameHistoryConfiguration : IEntityTypeConfiguration<NameHistory>
     {
-        public void Configure(EntityTypeBuilder<CompanyNameHistory> b)
+        public void Configure(EntityTypeBuilder<NameHistory> b)
         {
-            // Disable OUTPUT clause because table has triggers (TR_CompanyNameHistory_SetUpdatedAt, TR_CompanyNameHistory_PreventOverlap)
+            // Disable OUTPUT clause because table has triggers (TR_NameHistory_SetUpdatedAt, TR_NameHistory_PreventOverlap)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
-            b.HasMany(x => x.Translations).WithOne(x => x.NameHistory).HasForeignKey(x => x.CompanyNameHistoryId).OnDelete(DeleteBehavior.Cascade);
+
+            b.HasMany(x => x.Translations).WithOne(x => x.NameHistory).HasForeignKey(x => x.NameHistoryId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 
-    public class CompanyNameHistoryTranslationConfiguration : IEntityTypeConfiguration<CompanyNameHistoryTranslation>
+    public class NameHistoryTranslationConfiguration : IEntityTypeConfiguration<NameHistoryTranslation>
     {
-        public void Configure(EntityTypeBuilder<CompanyNameHistoryTranslation> b)
+        public void Configure(EntityTypeBuilder<NameHistoryTranslation> b)
         {
-            b.HasKey(x => new { x.CompanyNameHistoryId, x.LanguageId });
+            b.HasKey(x => new { x.NameHistoryId, x.LanguageId });
         }
     }
 
-    public class CompanyFinancialInfoConfiguration : IEntityTypeConfiguration<CompanyFinancialInfo>
+    public class FinancialInfoConfiguration : IEntityTypeConfiguration<FinancialInfo>
     {
-        public void Configure(EntityTypeBuilder<CompanyFinancialInfo> b)
+        public void Configure(EntityTypeBuilder<FinancialInfo> b)
         {
-            // Disable OUTPUT clause because table has triggers (TR_CompanyFinancialInfo_SetUpdatedAt)
+            // Disable OUTPUT clause because table has triggers (TR_FinancialInfo_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
 
             // Unique constraint: one record per company per fiscal year
@@ -113,28 +113,28 @@ namespace KSS.Data.Configuration
         }
     }
 
-    public class CompanyStakeholderConfiguration : IEntityTypeConfiguration<CompanyStakeholder>
+    public class StakeholderConfiguration : IEntityTypeConfiguration<Stakeholder>
     {
-        public void Configure(EntityTypeBuilder<CompanyStakeholder> b)
+        public void Configure(EntityTypeBuilder<Stakeholder> b)
         {
-            // Disable OUTPUT clause because table has triggers (TR_CompanyStakeholder_SetUpdatedAt)
+            // Disable OUTPUT clause because table has triggers (TR_Stakeholder_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
+
             b.HasOne(x => x.StakeholderType).WithMany(x => x.Stakeholders).HasForeignKey(x => x.StakeholderTypeId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Histories).WithOne(x => x.Stakeholder).HasForeignKey(x => x.CompanyStakeholderId).OnDelete(DeleteBehavior.Cascade);
-            
+
             // Unique constraint: (CompanyId, StakeholderTypeId, RelatedPartyType, RelatedPartyId)
             b.HasIndex(x => new { x.CompanyId, x.StakeholderTypeId, x.RelatedPartyType, x.RelatedPartyId }).IsUnique();
         }
     }
 
-    public class CompanyStakeholderHistoryConfiguration : IEntityTypeConfiguration<CompanyStakeholderHistory>
+    public class StakeholderHistoryConfiguration : IEntityTypeConfiguration<StakeholderHistory>
     {
-        public void Configure(EntityTypeBuilder<CompanyStakeholderHistory> b)
+        public void Configure(EntityTypeBuilder<StakeholderHistory> b)
         {
-            // Disable OUTPUT clause because table has triggers (TR_CompanyStakeholderHistory_SetUpdatedAt, TR_CompanyStakeholderHistory_PreventOverlap)
+            // Disable OUTPUT clause because table has triggers (TR_StakeholderHistory_SetUpdatedAt, TR_StakeholderHistory_PreventOverlap)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
+
             // Unique constraint: (CompanyStakeholderId, EffectiveDate)
             b.HasIndex(x => new { x.CompanyStakeholderId, x.EffectiveDate }).IsUnique();
         }
@@ -147,12 +147,12 @@ namespace KSS.Data.Configuration
         {
             // Disable OUTPUT clause because table has triggers (TR_Email_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
+
             b.HasOne(x => x.Label).WithMany(x => x.Emails).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
-            
+
             // Unique constraint: (CompanyId, Email)
             b.HasIndex(x => new { x.CompanyId, x.EmailAddress }).IsUnique();
-            
+
             // Unique filtered index: one primary per company
             b.HasIndex(x => x.CompanyId).IsUnique().HasFilter("[IsPrimary] = 1");
         }
@@ -165,12 +165,12 @@ namespace KSS.Data.Configuration
         {
             // Disable OUTPUT clause because table has triggers (TR_Phone_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
+
             b.HasOne(x => x.Label).WithMany(x => x.Phones).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
-            
+
             // Unique constraint: (CompanyId, CountryId, PhoneNumber)
             b.HasIndex(x => new { x.CompanyId, x.CountryId, x.PhoneNumber }).IsUnique();
-            
+
             // Unique filtered index: one primary per company
             b.HasIndex(x => x.CompanyId).IsUnique().HasFilter("[IsPrimary] = 1");
         }
@@ -183,10 +183,10 @@ namespace KSS.Data.Configuration
         {
             // Disable OUTPUT clause because table has triggers (TR_Address_SetUpdatedAt)
             b.ToTable(tb => tb.UseSqlOutputClause(false));
-            
+
             b.HasOne(x => x.Label).WithMany(x => x.Addresses).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(x => x.Translations).WithOne(x => x.Address).HasForeignKey(x => x.AddressId).OnDelete(DeleteBehavior.Cascade);
-            
+
             // Unique filtered index: one primary per company
             b.HasIndex(x => x.CompanyId).IsUnique().HasFilter("[IsPrimary] = 1");
         }

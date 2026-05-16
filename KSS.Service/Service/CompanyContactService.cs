@@ -9,14 +9,22 @@ namespace KSS.Service.Service
     public class CompanyContactService : ICompanyContactService
     {
         private readonly MainDbContext _dbContext;
+        private readonly IAccessService _accessService;
 
-        public CompanyContactService(MainDbContext dbContext)
+        public CompanyContactService(MainDbContext dbContext, IAccessService accessService)
         {
             _dbContext = dbContext;
+            _accessService = accessService;
         }
 
-        public async Task<CompanyContactDto> GetContactDataAsync(Guid companyId, short languageId = 12)
+        public async Task<CompanyContactDto?> GetContactDataAsync(Guid companyId, Guid callerPersonId, short languageId = 12)
         {
+            // Row-level access gate. Caller must have Information.Read (>=1) on
+            // THIS company. Null lets the controller respond 404 without leaking
+            // existence.
+            var levels = await _accessService.GetLevelsAsync(companyId, callerPersonId);
+            if (levels.Information < 1) return null;
+
             // Emails with label names
             var emails = await (from e in _dbContext.Emails
                                 where e.CompanyId == companyId

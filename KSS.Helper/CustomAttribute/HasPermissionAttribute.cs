@@ -4,7 +4,7 @@ namespace KSS.Helper.CustomAttribute
 {
     /// <summary>
     /// Requires the authenticated user to have the specified permission claim in their JWT token.
-    /// Usage: [HasPermission("Company.Create")]
+    /// Usage: [HasPermission("Service.Table.Action")] e.g. [HasPermission("Company.Company.Create")]
     /// </summary>
     public class HasPermissionAttribute : AuthorizeAttribute
     {

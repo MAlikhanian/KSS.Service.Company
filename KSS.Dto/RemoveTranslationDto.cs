@@ -6,7 +6,7 @@ namespace KSS.Dto
     /// </summary>
     public class RemoveTranslationDto
     {
-        public Guid CompanyNameHistoryId { get; set; }
+        public Guid NameHistoryId { get; set; }
         public short LanguageId { get; set; }
         public string Name { get; set; } = string.Empty;
     }
