@@ -44,8 +44,15 @@ namespace KSS.Service.Service
         /// </summary>
         /// <param name="languageId">Language ID for the translated name (e.g. 12 = Persian, 10 = English)</param>
         /// <param name="query">Optional search query to filter by current name or any historical name</param>
-        public async Task<IEnumerable<CompanySelectDto>> GetCompanySelectListAsync(short languageId, string? query = null)
+        public async Task<IEnumerable<CompanySelectDto>> GetCompanySelectListAsync(
+            short languageId,
+            string? query = null,
+            IReadOnlyCollection<Guid>? companyIds = null)
         {
+            // Caller passed an explicit ID set that's already empty → nothing to return.
+            if (companyIds != null && companyIds.Count == 0)
+                return new List<CompanySelectDto>();
+
             // Visibility filter: caller must have an Access row (per-person) OR a
             // RoleAccess row (per-company or global) for the company to be returned.
             var callerId = GetCallerPersonId();
@@ -89,6 +96,14 @@ namespace KSS.Service.Service
             IQueryable<KSS.Entity.Company> visibleCompanies = _dbContext.Companies;
             if (!hasGlobal)
                 visibleCompanies = visibleCompanies.Where(c => allowedList!.Contains(c.Id));
+
+            // Optional explicit-ID filter, applied AFTER the access filter so it can
+            // only narrow visibility — never widen it.
+            if (companyIds != null)
+            {
+                var idList = companyIds.ToList();
+                visibleCompanies = visibleCompanies.Where(c => idList.Contains(c.Id));
+            }
 
             var companiesQuery = from c in visibleCompanies
                                  join ct in _dbContext.Translations

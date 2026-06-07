@@ -170,6 +170,22 @@ namespace KSS.Service.Service
                 .ToList();
         }
 
+        public async Task<List<AccessGrantPairDto>> ListAllGrantPairsAsync()
+        {
+            // Walk every row in the Access table; collapse multi-section rows
+            // into a distinct (CompanyId, GrantedToPersonId) pair so consumers
+            // get exactly one row per (company, grantee).
+            var rows = await _repository.ToListAsync();
+            return rows
+                .GroupBy(r => new { r.CompanyId, r.GrantedToPersonId })
+                .Select(g => new AccessGrantPairDto
+                {
+                    CompanyId = g.Key.CompanyId,
+                    GrantedToPersonId = g.Key.GrantedToPersonId,
+                })
+                .ToList();
+        }
+
         private static bool IsValidLevel(int level) => level >= 0 && level <= 2;
     }
 }

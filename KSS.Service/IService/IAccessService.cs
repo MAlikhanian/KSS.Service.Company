@@ -28,5 +28,12 @@ namespace KSS.Service.IService
         /// Lists every grantee on a company, with both section levels rolled up.
         /// </summary>
         Task<List<AccessGrantSummaryDto>> ListGrantsByCompanyAsync(Guid companyId);
+
+        /// <summary>
+        /// Tenant-wide flat list of (CompanyId, GrantedToPersonId) pairs across
+        /// every section. Used by cross-service dashboard report endpoints —
+        /// returns only the two IDs, no section levels or timestamps.
+        /// </summary>
+        Task<List<AccessGrantPairDto>> ListAllGrantPairsAsync();
     }
 }

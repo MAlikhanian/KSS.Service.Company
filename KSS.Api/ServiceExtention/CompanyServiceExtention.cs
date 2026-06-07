@@ -53,6 +53,7 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IStakeholderService, StakeholderService>();
             services.AddScoped<IStakeholderHistoryRepository, StakeholderHistoryRepository>();
             services.AddScoped<IStakeholderHistoryService, StakeholderHistoryService>();
+            services.AddScoped<ICompanyStakeholderManagementService, CompanyStakeholderManagementService>();
             services.AddScoped<IFinancialInfoRepository, FinancialInfoRepository>();
             services.AddScoped<IFinancialInfoService, FinancialInfoService>();
 

@@ -11,7 +11,8 @@ namespace KSS.Api.Controller
     [ApiController]
     [Route("Api/[controller]/[action]")]
     [Authorize]
-    [HasPermission("Company.Access.Read")]
+    // [HasPermission("Company.Access.Read")] is now per-action so
+    // ListAllGrants can be accessible to any authenticated user.
     public class AccessController : ControllerBase
     {
         private readonly IAccessService _service;
@@ -23,6 +24,7 @@ namespace KSS.Api.Controller
 
         /// <summary>GET /Api/Access/ByCompany/{companyId} — list grants on a company, one entry per grantee.</summary>
         [HttpGet("{companyId}")]
+        [HasPermission("Company.Access.Read")]
         public async Task<ActionResult<List<AccessGrantSummaryDto>>> ByCompany(Guid companyId)
         {
             var caller = GetCallerPersonId();
@@ -58,10 +60,24 @@ namespace KSS.Api.Controller
 
         /// <summary>GET /Api/Access/MyLevels/{companyId} — caller's per-section levels on companyId.</summary>
         [HttpGet("{companyId}")]
+        [HasPermission("Company.Access.Read")]
         public async Task<ActionResult<AccessLevelsDto>> MyLevels(Guid companyId)
         {
             var levels = await _service.GetLevelsAsync(companyId, GetCallerPersonId());
             return Ok(levels);
+        }
+
+        /// <summary>
+        /// GET /Api/Access/ListAllGrants — flat list of (CompanyId, GrantedToPersonId)
+        /// pairs across all companies. Powers the dashboard Highlights panel.
+        /// Available to any authenticated user (no specific permission required).
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<ActionResult<List<AccessGrantPairDto>>> ListAllGrants()
+        {
+            var data = await _service.ListAllGrantPairsAsync();
+            return Ok(data);
         }
 
         private Guid GetCallerPersonId()

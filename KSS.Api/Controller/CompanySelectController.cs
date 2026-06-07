@@ -20,15 +20,18 @@ namespace KSS.Api.Controller
         }
 
         /// <summary>
-        /// GET /Api/CompanySelect/List?languageId=12&query=کارگزاری
+        /// GET /Api/CompanySelect/List?languageId=12&query=کارگزاری&companyIds=g1&companyIds=g2
         /// Returns a lightweight list of companies for select dropdowns.
+        /// companyIds, when supplied, narrows the result to the intersection with
+        /// the caller's Access/RoleAccess set — never widens it.
         /// </summary>
         [HttpGet("List")]
         public async Task<ActionResult<IEnumerable<CompanySelectDto>>> List(
             [FromQuery] short languageId = 12,
-            [FromQuery] string? query = null)
+            [FromQuery] string? query = null,
+            [FromQuery] Guid[]? companyIds = null)
         {
-            var result = await _service.GetCompanySelectListAsync(languageId, query);
+            var result = await _service.GetCompanySelectListAsync(languageId, query, companyIds);
             return Ok(result);
         }
     }
