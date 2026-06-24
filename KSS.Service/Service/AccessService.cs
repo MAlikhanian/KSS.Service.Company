@@ -37,6 +37,38 @@ namespace KSS.Service.Service
                 .ToList();
         }
 
+        // Reads the "personId" claim from the JWT — the calling user's person id.
+        private Guid GetCallerPersonId()
+        {
+            var raw = _httpContextAccessor?.HttpContext?.User?.FindFirst("personId")?.Value;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
+
+        public async Task SeedCreatorAccessAsync(Guid companyId)
+        {
+            var creatorId = GetCallerPersonId();
+            if (creatorId == Guid.Empty) return; // system/seed context — no creator to grant.
+
+            // Grant the creator Edit on the Information section only. The Access
+            // section is deliberately omitted, so the creator can edit the
+            // company's data but cannot manage its access list. This is the
+            // initial-owner seed, so it does NOT run the Access-edit gate that
+            // UpsertGrantAsync enforces for later grants.
+            var entity = new Access
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                GrantedToPersonId = creatorId,
+                SectionId = AccessSectionId.Information,
+                Level = 2,
+                CreatedBy = creatorId,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+            };
+            _repository.AddUnawaited(entity, false);
+            await _repository.SaveChangesAsync();
+        }
+
         public async Task<AccessLevelsDto> GetLevelsAsync(Guid companyId, Guid callerPersonId)
         {
             // Note: there's no Company.CreatedBy column today, so no owner

@@ -2,6 +2,7 @@ using KSS.Repository.IRepository;
 using KSS.Repository.Repository;
 using KSS.Service.IService;
 using KSS.Service.Service;
+using KSS.Service.Client;
 using Microsoft.EntityFrameworkCore;
 using KSS.Data.DbContexts;
 
@@ -76,6 +77,18 @@ namespace KSS.Api.ServiceExtention
 
             // Required so AccessService can read JWT claims for the caller's roleIds.
             services.AddHttpContextAccessor();
+
+            // Typed client to KSS.Service.Person — resolves stakeholder
+            // related-party / board-representative display names server-side.
+            // The caller's Bearer token is forwarded by PersonForwardAuthHandler.
+            var personBaseUrl = configuration["Services:Person:BaseUrl"]
+                ?? throw new InvalidOperationException("Missing Services:Person:BaseUrl in configuration.");
+            services.AddTransient<PersonForwardAuthHandler>();
+            services.AddHttpClient<IPersonApiClient, PersonApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(personBaseUrl.TrimEnd('/') + "/");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            }).AddHttpMessageHandler<PersonForwardAuthHandler>();
 
             return services;
         }

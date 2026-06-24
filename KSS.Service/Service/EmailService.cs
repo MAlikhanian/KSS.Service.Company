@@ -7,7 +7,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class EmailService : BaseService<Email, EmailDto, EmailDto, EmailDto>, IEmailService
+    public class EmailService : BaseService<Email, EmailDto, EmailInsertDto, EmailDto>, IEmailService
     {
         public EmailService(IMapper mapper, IEmailRepository repository) : base(mapper, repository) { }
 
@@ -18,7 +18,7 @@ namespace KSS.Service.Service
             await base.AddAsync(item, saveChanges);
         }
 
-        public override async Task AddDtoAsync(EmailDto item, bool saveChanges = true)
+        public override async Task AddDtoAsync(EmailInsertDto item, bool saveChanges = true)
         {
             item.EmailAddress = EmailHelper.NormalizeEmail(item.EmailAddress);
             var entity = _mapper.Map<Email>(item);

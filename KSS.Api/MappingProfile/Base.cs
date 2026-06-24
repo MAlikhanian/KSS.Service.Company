@@ -35,6 +35,15 @@ namespace KSS.Api.MappingProfile
             CreateMap<Address, AddressDto>().ReverseMap();
             CreateMap<AddressTranslation, AddressTranslationDto>().ReverseMap();
 
+            // Insert DTOs (no Id) — backend stamps the v7 GUID; a client GUID can't bind.
+            CreateMap<AddressInsertDto, Address>();
+            CreateMap<EmailInsertDto, Email>();
+            CreateMap<PhoneInsertDto, Phone>();
+            CreateMap<NameHistoryInsertDto, NameHistory>();
+            CreateMap<FinancialInfoInsertDto, FinancialInfo>();
+            CreateMap<StakeholderInsertDto, Stakeholder>();
+            CreateMap<StakeholderHistoryInsertDto, StakeholderHistory>();
+
             // Access + RoleAccess
             CreateMap<Access, AccessDto>().ReverseMap();
             CreateMap<AccessAddDto, Access>();

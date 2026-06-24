@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace KSS.Api.Controller
 {
     [PermissionGroup("Information")]
-    public class CompanyController : BaseController<Company, CompanyDto, CompanyDto, CompanyDto>
+    public class CompanyController : BaseController<Company, CompanyDto, CompanyInsertDto, CompanyDto>
     {
         private readonly ICompanyService _service;
 

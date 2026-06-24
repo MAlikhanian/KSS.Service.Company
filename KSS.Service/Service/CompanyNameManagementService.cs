@@ -45,10 +45,12 @@ namespace KSS.Service.Service
         /// </summary>
         public async Task<ServiceResult> AddNameWithTranslationsAsync(AddNameWithTranslationsDto dto)
         {
-            // 1) Create the name history record — check result for business rule violations
+            // 1) Create the name history record — id generated here (v7) because
+            // the translations below reference it as a FK in the same operation.
+            var nameHistoryId = Guid.CreateVersion7();
             var nameHistoryDto = new NameHistoryDto
             {
-                Id = dto.Id,
+                Id = nameHistoryId,
                 CompanyId = dto.CompanyId,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
@@ -62,8 +64,13 @@ namespace KSS.Service.Service
             {
                 if (!string.IsNullOrWhiteSpace(tr.Name))
                 {
-                    tr.NameHistoryId = dto.Id;
-                    await _translationService.AddDtoAsync(tr);
+                    await _translationService.AddDtoAsync(new NameHistoryTranslationDto
+                    {
+                        NameHistoryId = nameHistoryId,
+                        LanguageId = tr.LanguageId,
+                        Name = tr.Name,
+                        ShortName = tr.ShortName,
+                    });
                 }
             }
 

@@ -7,7 +7,7 @@ using KSS.Helper.CustomAttribute;
 namespace KSS.Api.Controller
 {
     [PermissionGroup("Information")]
-    public class EmailController : BaseController<Email, EmailDto, EmailDto, EmailDto>
+    public class EmailController : BaseController<Email, EmailDto, EmailInsertDto, EmailDto>
     {
         public EmailController(IEmailService service) : base(service) { }
     }

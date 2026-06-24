@@ -34,7 +34,7 @@ namespace KSS.Api.Controller
         // --- Email CRUD ---
         [HttpPost("{companyId}/Email")]
         [HasPermission("Company.Information.Modify")]
-        public async Task<ActionResult<CompanyEmailViewDto>> AddEmail(Guid companyId, [FromBody] CompanyEmailViewDto dto)
+        public async Task<ActionResult<CompanyEmailViewDto>> AddEmail(Guid companyId, [FromBody] CompanyEmailInsertDto dto)
         {
             var result = await _service.AddEmailAsync(companyId, dto);
             return Ok(result);
@@ -59,7 +59,7 @@ namespace KSS.Api.Controller
         // --- Phone CRUD ---
         [HttpPost("{companyId}/Phone")]
         [HasPermission("Company.Information.Modify")]
-        public async Task<ActionResult<CompanyPhoneViewDto>> AddPhone(Guid companyId, [FromBody] CompanyPhoneViewDto dto)
+        public async Task<ActionResult<CompanyPhoneViewDto>> AddPhone(Guid companyId, [FromBody] CompanyPhoneInsertDto dto)
         {
             var result = await _service.AddPhoneAsync(companyId, dto);
             return Ok(result);
@@ -84,7 +84,7 @@ namespace KSS.Api.Controller
         // --- Address CRUD ---
         [HttpPost("{companyId}/Address")]
         [HasPermission("Company.Information.Modify")]
-        public async Task<ActionResult<CompanyAddressViewDto>> AddAddress(Guid companyId, [FromBody] CompanyAddressViewDto dto, [FromQuery] short languageId = 12)
+        public async Task<ActionResult<CompanyAddressViewDto>> AddAddress(Guid companyId, [FromBody] CompanyAddressInsertDto dto, [FromQuery] short languageId = 12)
         {
             var result = await _service.AddAddressAsync(companyId, dto, languageId);
             return Ok(result);

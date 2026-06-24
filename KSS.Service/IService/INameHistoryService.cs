@@ -4,7 +4,7 @@ using KSS.Helper;
 
 namespace KSS.Service.IService
 {
-    public interface INameHistoryService : IBaseService<NameHistory, NameHistoryDto, NameHistoryDto, NameHistoryDto>
+    public interface INameHistoryService : IBaseService<NameHistory, NameHistoryDto, NameHistoryInsertDto, NameHistoryDto>
     {
         /// <summary>
         /// Delete a name history entry with business rule validation.

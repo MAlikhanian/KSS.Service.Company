@@ -6,7 +6,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class CompanyService : BaseService<Company, CompanyDto, CompanyDto, CompanyDto>, ICompanyService
+    public class CompanyService : BaseService<Company, CompanyDto, CompanyInsertDto, CompanyDto>, ICompanyService
     {
         public CompanyService(IMapper mapper, ICompanyRepository repository) : base(mapper, repository) { }
     }

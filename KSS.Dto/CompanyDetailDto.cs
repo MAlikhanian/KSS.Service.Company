@@ -30,6 +30,10 @@ namespace KSS.Dto
         public string? Website { get; set; }
         public bool IsActive { get; set; }
 
+        // Audit (Company record)
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
         // Name history entries
         public List<NameHistoryDto> NameHistory { get; set; } = new();
     }

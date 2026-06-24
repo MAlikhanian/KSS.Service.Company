@@ -55,7 +55,10 @@ namespace KSS.Service.Service
                                            Id = h.Id,
                                            Name = ht != null ? ht.Name : string.Empty,
                                            StartDate = h.StartDate,
-                                           EndDate = h.EndDate
+                                           EndDate = h.EndDate,
+                                           Description = h.Description,
+                                           CreatedAt = h.CreatedAt,
+                                           UpdatedAt = h.UpdatedAt ?? h.CreatedAt,
                                        }).AsNoTracking().ToListAsync();
 
             // Build former names from past name history entries (where EndDate is not null)
@@ -80,6 +83,8 @@ namespace KSS.Service.Service
                 FoundedDate = company.FoundedDate,
                 Website = company.Website,
                 IsActive = company.IsActive,
+                CreatedAt = company.CreatedAt,
+                UpdatedAt = company.UpdatedAt,
                 NameHistory = nameHistories
             };
         }

@@ -4,6 +4,7 @@ using KSS.Dto;
 using KSS.Entity;
 using KSS.Helper;
 using KSS.Service.IService;
+using KSS.Service.Client;
 
 namespace KSS.Service.Service
 {
@@ -18,11 +19,13 @@ namespace KSS.Service.Service
     {
         private readonly MainDbContext _dbContext;
         private readonly IAccessService _accessService;
+        private readonly IPersonApiClient _personApi;
 
-        public CompanyStakeholderManagementService(MainDbContext dbContext, IAccessService accessService)
+        public CompanyStakeholderManagementService(MainDbContext dbContext, IAccessService accessService, IPersonApiClient personApi)
         {
             _dbContext = dbContext;
             _accessService = accessService;
+            _personApi = personApi;
         }
 
         public async Task<List<CompanyStakeholderViewDto>?> GetByCompanyAsync(Guid companyId, Guid callerPersonId, short languageId = 12)
@@ -61,6 +64,59 @@ namespace KSS.Service.Service
                 .GroupBy(h => h.CompanyStakeholderId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
+            // ── Resolve display names server-side (no client-side join) ──
+            // Person names (related-party type 2 + board representatives) come
+            // from the Person service in ONE batched call; company names
+            // (type 1) are resolved locally from the Translation table.
+            var personIds = new HashSet<Guid>();
+            foreach (var s in stakeholders)
+                if (s.RelatedPartyType == 2) personIds.Add(s.RelatedPartyId);
+            foreach (var h in histories)
+                if (h.BoardRepresentativePersonId.HasValue) personIds.Add(h.BoardRepresentativePersonId.Value);
+
+            // GetPersonNamesAsync short-circuits to an empty map for an empty set
+            // and degrades gracefully (empty map) if the Person service errors.
+            var personNames = await _personApi.GetPersonNamesAsync(personIds.ToList(), languageId);
+
+            var companyIds = stakeholders
+                .Where(s => s.RelatedPartyType == 1)
+                .Select(s => s.RelatedPartyId)
+                .Distinct()
+                .ToList();
+
+            var companyNames = companyIds.Count == 0
+                ? new Dictionary<Guid, string>()
+                : await (from c in _dbContext.Companies
+                         where companyIds.Contains(c.Id)
+                         join t in _dbContext.Translations
+                             on new { CompanyId = c.Id, LanguageId = languageId }
+                             equals new { t.CompanyId, t.LanguageId }
+                             into tj
+                         from t in tj.DefaultIfEmpty()
+                         select new { c.Id, Name = t != null ? t.Name : c.NationalId })
+                        .AsNoTracking()
+                        .ToDictionaryAsync(x => x.Id, x => x.Name ?? string.Empty);
+
+            CompanyStakeholderHistoryViewDto MapHistory(StakeholderHistory h) => new()
+            {
+                Id = h.Id,
+                OwnershipPercentage = h.OwnershipPercentage,
+                ShareCount = h.ShareCount,
+                BoardRepresentativePersonId = h.BoardRepresentativePersonId,
+                BoardRepresentativeName = h.BoardRepresentativePersonId.HasValue
+                    && personNames.TryGetValue(h.BoardRepresentativePersonId.Value, out var brn) ? brn : null,
+                RegistrationDate = h.RegistrationDate,
+                EffectiveDate = h.EffectiveDate,
+                EndDate = h.EndDate,
+                CreatedAt = h.CreatedAt,
+                UpdatedAt = h.UpdatedAt,
+            };
+
+            string ResolveRelatedPartyName(byte type, Guid id) =>
+                type == 1
+                    ? (companyNames.TryGetValue(id, out var cn) ? cn : string.Empty)
+                    : (personNames.TryGetValue(id, out var pn) ? pn : string.Empty);
+
             return stakeholders.Select(s =>
             {
                 var rows = historiesByStakeholder.TryGetValue(s.Id, out var list)
@@ -73,6 +129,7 @@ namespace KSS.Service.Service
                     CompanyId = s.CompanyId,
                     RelatedPartyType = s.RelatedPartyType,
                     RelatedPartyId = s.RelatedPartyId,
+                    RelatedPartyName = ResolveRelatedPartyName(s.RelatedPartyType, s.RelatedPartyId),
                     StakeholderTypeId = s.StakeholderTypeId,
                     StakeholderTypeName = s.TypeName,
                     Current = rows.FirstOrDefault(r => r.EndDate == null),
@@ -242,18 +299,7 @@ namespace KSS.Service.Service
                 throw new BusinessRuleException("Share count cannot be negative.");
 
             if (dto.EffectiveDate.Date < dto.RegistrationDate.Date)
-                throw new BusinessRuleException("Effective date cannot be earlier than registration date.");
+                throw new BusinessRuleException("EFFECTIVE_DATE_BEFORE_REGISTRATION");
         }
-
-        private static CompanyStakeholderHistoryViewDto MapHistory(StakeholderHistory h) => new()
-        {
-            Id = h.Id,
-            OwnershipPercentage = h.OwnershipPercentage,
-            ShareCount = h.ShareCount,
-            BoardRepresentativePersonId = h.BoardRepresentativePersonId,
-            RegistrationDate = h.RegistrationDate,
-            EffectiveDate = h.EffectiveDate,
-            EndDate = h.EndDate,
-        };
     }
 }

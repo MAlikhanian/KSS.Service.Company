@@ -3,5 +3,5 @@ using KSS.Entity;
 
 namespace KSS.Service.IService
 {
-    public interface IPhoneService : IBaseService<Phone, PhoneDto, PhoneDto, PhoneDto> { }
+    public interface IPhoneService : IBaseService<Phone, PhoneDto, PhoneInsertDto, PhoneDto> { }
 }

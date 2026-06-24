@@ -1,4 +1,5 @@
 using System.Transactions;
+using AutoMapper;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Service.IService;
@@ -11,17 +12,23 @@ namespace KSS.Service.Service
         private readonly ITranslationService _translationService;
         private readonly INameHistoryService _nameHistoryService;
         private readonly INameHistoryTranslationService _nameHistoryTranslationService;
+        private readonly IAccessService _accessService;
+        private readonly IMapper _mapper;
 
         public CompanyOperationService(
             ICompanyService companyService,
             ITranslationService translationService,
             INameHistoryService nameHistoryService,
-            INameHistoryTranslationService nameHistoryTranslationService)
+            INameHistoryTranslationService nameHistoryTranslationService,
+            IAccessService accessService,
+            IMapper mapper)
         {
             _companyService = companyService;
             _translationService = translationService;
             _nameHistoryService = nameHistoryService;
             _nameHistoryTranslationService = nameHistoryTranslationService;
+            _accessService = accessService;
+            _mapper = mapper;
         }
 
         public async Task<CompanyDto> CreateCompanyWithTranslationsAndNameHistoryAsync(CompanyInsertDto dto)
@@ -30,10 +37,12 @@ namespace KSS.Service.Service
 
             try
             {
-                // 1. Add Company (own table only)
+                // 1. Add Company (own table only). The id is generated here (v7)
+                // because the translations + name-history below need it as a FK
+                // within this same transaction. The frontend never supplies it.
                 var companyDto = new CompanyDto
                 {
-                    Id = dto.Id,
+                    Id = Guid.CreateVersion7(),
                     LegalFormId = dto.LegalFormId,
                     IndustryId = dto.IndustryId,
                     RegistrationDate = dto.RegistrationDate,
@@ -51,7 +60,15 @@ namespace KSS.Service.Service
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                await _companyService.AddDtoAsync(companyDto);
+                // Insert with the explicitly-generated v7 id preserved (the child rows
+                // below FK to it). Entity-level AddAsync keeps the id; the public
+                // AddDto endpoint uses CompanyInsertDto (no Id) for external callers.
+                await _companyService.AddAsync(_mapper.Map<Company>(companyDto));
+
+                // 1b. Grant the creator row-level access on the new company:
+                // Information = Edit, Access section omitted (creator can edit the
+                // company but not manage its access list). Same transaction.
+                await _accessService.SeedCreatorAccessAsync(companyDto.Id);
 
                 // 2. Add Company Translations (own table only)
                 if (dto.Translations != null && dto.Translations.Any())
@@ -77,7 +94,7 @@ namespace KSS.Service.Service
                         throw new ArgumentException("StartDate must be less than or equal to EndDate.", nameof(dto));
                     }
 
-                    var nameHistoryId = Guid.NewGuid();
+                    var nameHistoryId = Guid.CreateVersion7();
                     var nameHistoryDto = new NameHistoryDto
                     {
                         Id = nameHistoryId,
@@ -87,7 +104,7 @@ namespace KSS.Service.Service
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    await _nameHistoryService.AddDtoAsync(nameHistoryDto);
+                    await _nameHistoryService.AddAsync(_mapper.Map<NameHistory>(nameHistoryDto));
 
                     // 4. Add Name History Translations (own table only)
                     if (dto.NameHistory.Translations != null && dto.NameHistory.Translations.Any())

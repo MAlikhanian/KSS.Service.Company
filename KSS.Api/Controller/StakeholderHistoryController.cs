@@ -7,7 +7,7 @@ using KSS.Helper.CustomAttribute;
 namespace KSS.Api.Controller
 {
     [PermissionGroup("Information")]
-    public class StakeholderHistoryController : BaseController<StakeholderHistory, StakeholderHistoryDto, StakeholderHistoryDto, StakeholderHistoryDto>
+    public class StakeholderHistoryController : BaseController<StakeholderHistory, StakeholderHistoryDto, StakeholderHistoryInsertDto, StakeholderHistoryDto>
     {
         public StakeholderHistoryController(IStakeholderHistoryService service) : base(service) { }
     }

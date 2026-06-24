@@ -6,7 +6,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class FinancialInfoService : BaseService<FinancialInfo, FinancialInfoDto, FinancialInfoDto, FinancialInfoDto>, IFinancialInfoService
+    public class FinancialInfoService : BaseService<FinancialInfo, FinancialInfoDto, FinancialInfoInsertDto, FinancialInfoDto>, IFinancialInfoService
     {
         private readonly IFinancialInfoRepository _financialInfoRepository;
 
@@ -15,7 +15,14 @@ namespace KSS.Service.Service
             _financialInfoRepository = repository;
         }
 
-        public override async Task AddDtoAsync(FinancialInfoDto item, bool saveChanges = true)
+        // Report read — a company's financial-info rows, no per-caller access filter.
+        public async Task<List<FinancialInfoDto>> GetByCompanyAsync(Guid companyId)
+        {
+            var rows = await _financialInfoRepository.ToListAsync(x => x.CompanyId == companyId);
+            return _mapper.Map<List<FinancialInfoDto>>(rows);
+        }
+
+        public override async Task AddDtoAsync(FinancialInfoInsertDto item, bool saveChanges = true)
         {
             var entity = _mapper.Map<FinancialInfo>(item);
             ValidateFinancialInfo(entity);

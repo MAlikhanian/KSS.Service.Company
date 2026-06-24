@@ -7,7 +7,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class PhoneService : BaseService<Phone, PhoneDto, PhoneDto, PhoneDto>, IPhoneService
+    public class PhoneService : BaseService<Phone, PhoneDto, PhoneInsertDto, PhoneDto>, IPhoneService
     {
         public PhoneService(IMapper mapper, IPhoneRepository repository) : base(mapper, repository) { }
 
@@ -18,7 +18,7 @@ namespace KSS.Service.Service
             await base.AddAsync(item, saveChanges);
         }
 
-        public override async Task AddDtoAsync(PhoneDto item, bool saveChanges = true)
+        public override async Task AddDtoAsync(PhoneInsertDto item, bool saveChanges = true)
         {
             PhoneHelper.ValidateE164(item.PhoneNumber);
             var entity = _mapper.Map<Phone>(item);

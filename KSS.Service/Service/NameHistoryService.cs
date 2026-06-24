@@ -7,7 +7,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class NameHistoryService : BaseService<NameHistory, NameHistoryDto, NameHistoryDto, NameHistoryDto>, INameHistoryService
+    public class NameHistoryService : BaseService<NameHistory, NameHistoryDto, NameHistoryInsertDto, NameHistoryDto>, INameHistoryService
     {
         private readonly INameHistoryRepository _nameHistoryRepository;
 
@@ -113,9 +113,10 @@ namespace KSS.Service.Service
                 throw new BusinessRuleException(result.Message!);
         }
 
-        public override async Task AddDtoAsync(NameHistoryDto item, bool saveChanges = true)
+        public override async Task AddDtoAsync(NameHistoryInsertDto item, bool saveChanges = true)
         {
-            var result = await AddNameHistoryDtoAsync(item, saveChanges);
+            var entity = _mapper.Map<NameHistory>(item);
+            var result = await AddNameHistoryAsync(entity, saveChanges);
             if (!result.Success)
                 throw new BusinessRuleException(result.Message!);
         }

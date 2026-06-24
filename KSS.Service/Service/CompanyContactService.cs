@@ -42,7 +42,9 @@ namespace KSS.Service.Service
                                     LabelName = lt != null ? lt.Name : string.Empty,
                                     EmailAddress = e.EmailAddress,
                                     IsPrimary = e.IsPrimary,
-                                    IsVerified = e.IsVerified
+                                    IsVerified = e.IsVerified,
+                                    CreatedAt = e.CreatedAt,
+                                    UpdatedAt = e.UpdatedAt
                                 }).AsNoTracking().ToListAsync();
 
             // Phones with label names
@@ -63,7 +65,9 @@ namespace KSS.Service.Service
                                     CountryId = p.CountryId,
                                     PhoneNumber = p.PhoneNumber,
                                     IsPrimary = p.IsPrimary,
-                                    IsVerified = p.IsVerified
+                                    IsVerified = p.IsVerified,
+                                    CreatedAt = p.CreatedAt,
+                                    UpdatedAt = p.UpdatedAt
                                 }).AsNoTracking().ToListAsync();
 
             // Addresses with label names and translations
@@ -93,7 +97,9 @@ namespace KSS.Service.Service
                                        Street1 = at != null ? at.Street1 : string.Empty,
                                        Street2 = at != null ? at.Street2 : null,
                                        IsPrimary = a.IsPrimary,
-                                       IsVerified = a.IsVerified
+                                       IsVerified = a.IsVerified,
+                                       CreatedAt = a.CreatedAt,
+                                       UpdatedAt = a.UpdatedAt
                                    }).AsNoTracking().ToListAsync();
 
             return new CompanyContactDto
@@ -104,11 +110,11 @@ namespace KSS.Service.Service
             };
         }
 
-        public async Task<CompanyEmailViewDto> AddEmailAsync(Guid companyId, CompanyEmailViewDto dto)
+        public async Task<CompanyEmailViewDto> AddEmailAsync(Guid companyId, CompanyEmailInsertDto dto)
         {
             var entity = new Email
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 CompanyId = companyId,
                 LabelId = dto.LabelId,
                 EmailAddress = dto.EmailAddress.Trim().ToLowerInvariant(),
@@ -120,9 +126,18 @@ namespace KSS.Service.Service
             _dbContext.Emails.Add(entity);
             await _dbContext.SaveChangesAsync();
 
-            dto.Id = entity.Id;
-            dto.CompanyId = companyId;
-            return dto;
+            return new CompanyEmailViewDto
+            {
+                Id = entity.Id,
+                CompanyId = entity.CompanyId,
+                LabelId = entity.LabelId,
+                LabelName = string.Empty,
+                EmailAddress = entity.EmailAddress,
+                IsPrimary = entity.IsPrimary,
+                IsVerified = entity.IsVerified,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+            };
         }
 
         public async Task<CompanyEmailViewDto> UpdateEmailAsync(Guid emailId, CompanyEmailViewDto dto)
@@ -150,11 +165,11 @@ namespace KSS.Service.Service
             }
         }
 
-        public async Task<CompanyPhoneViewDto> AddPhoneAsync(Guid companyId, CompanyPhoneViewDto dto)
+        public async Task<CompanyPhoneViewDto> AddPhoneAsync(Guid companyId, CompanyPhoneInsertDto dto)
         {
             var entity = new Phone
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 CompanyId = companyId,
                 LabelId = dto.LabelId,
                 CountryId = dto.CountryId,
@@ -167,9 +182,19 @@ namespace KSS.Service.Service
             _dbContext.Phones.Add(entity);
             await _dbContext.SaveChangesAsync();
 
-            dto.Id = entity.Id;
-            dto.CompanyId = companyId;
-            return dto;
+            return new CompanyPhoneViewDto
+            {
+                Id = entity.Id,
+                CompanyId = entity.CompanyId,
+                LabelId = entity.LabelId,
+                LabelName = string.Empty,
+                CountryId = entity.CountryId,
+                PhoneNumber = entity.PhoneNumber,
+                IsPrimary = entity.IsPrimary,
+                IsVerified = entity.IsVerified,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+            };
         }
 
         public async Task<CompanyPhoneViewDto> UpdatePhoneAsync(Guid phoneId, CompanyPhoneViewDto dto)
@@ -198,11 +223,11 @@ namespace KSS.Service.Service
             }
         }
 
-        public async Task<CompanyAddressViewDto> AddAddressAsync(Guid companyId, CompanyAddressViewDto dto, short languageId = 12)
+        public async Task<CompanyAddressViewDto> AddAddressAsync(Guid companyId, CompanyAddressInsertDto dto, short languageId = 12)
         {
             var entity = new Address
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 CompanyId = companyId,
                 LabelId = dto.LabelId,
                 CountryId = dto.CountryId,
@@ -230,9 +255,23 @@ namespace KSS.Service.Service
 
             await _dbContext.SaveChangesAsync();
 
-            dto.Id = entity.Id;
-            dto.CompanyId = companyId;
-            return dto;
+            return new CompanyAddressViewDto
+            {
+                Id = entity.Id,
+                CompanyId = entity.CompanyId,
+                LabelId = entity.LabelId,
+                LabelName = string.Empty,
+                CountryId = entity.CountryId,
+                RegionId = entity.RegionId,
+                CityId = entity.CityId,
+                PostalCode = entity.PostalCode,
+                Street1 = dto.Street1,
+                Street2 = dto.Street2,
+                IsPrimary = entity.IsPrimary,
+                IsVerified = entity.IsVerified,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+            };
         }
 
         public async Task<CompanyAddressViewDto> UpdateAddressAsync(Guid addressId, CompanyAddressViewDto dto, short languageId = 12)

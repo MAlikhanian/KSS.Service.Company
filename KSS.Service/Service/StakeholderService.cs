@@ -6,7 +6,7 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class StakeholderService : BaseService<Stakeholder, StakeholderDto, StakeholderDto, StakeholderDto>, IStakeholderService
+    public class StakeholderService : BaseService<Stakeholder, StakeholderDto, StakeholderInsertDto, StakeholderDto>, IStakeholderService
     {
         public StakeholderService(IMapper mapper, IStakeholderRepository repository) : base(mapper, repository) { }
 
@@ -16,7 +16,7 @@ namespace KSS.Service.Service
             await base.AddAsync(item, saveChanges);
         }
 
-        public override async Task AddDtoAsync(StakeholderDto item, bool saveChanges = true)
+        public override async Task AddDtoAsync(StakeholderInsertDto item, bool saveChanges = true)
         {
             var entity = _mapper.Map<Stakeholder>(item);
             ValidateStakeholder(entity);

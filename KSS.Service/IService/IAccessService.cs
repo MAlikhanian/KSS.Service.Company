@@ -20,6 +20,16 @@ namespace KSS.Service.IService
         Task UpsertGrantAsync(AccessGrantDto dto, Guid callerPersonId);
 
         /// <summary>
+        /// Initial-owner seed, called from the company-create transaction. Grants
+        /// the CREATOR (resolved from the JWT 'personId' claim) Edit (Level 2) on
+        /// the Information section only — deliberately NOT the Access section, so
+        /// the creator can edit the company's data but cannot manage its access
+        /// list. Bypasses the Access-section authorization gate (the creator has
+        /// no access yet on a brand-new company). No-op if there is no caller.
+        /// </summary>
+        Task SeedCreatorAccessAsync(Guid companyId);
+
+        /// <summary>
         /// Owner-only. Deletes all rows for the (CompanyId, GrantedToPersonId) pair.
         /// </summary>
         Task RevokeByPairAsync(Guid companyId, Guid grantedToPersonId, Guid callerPersonId);

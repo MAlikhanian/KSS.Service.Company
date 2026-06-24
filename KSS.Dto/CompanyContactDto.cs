@@ -20,6 +20,8 @@ namespace KSS.Dto
         public string EmailAddress { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }
         public bool IsVerified { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 
     public class CompanyPhoneViewDto
@@ -32,6 +34,8 @@ namespace KSS.Dto
         public string PhoneNumber { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }
         public bool IsVerified { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 
     public class CompanyAddressViewDto
@@ -48,5 +52,37 @@ namespace KSS.Dto
         public string? Street2 { get; set; }
         public bool IsPrimary { get; set; }
         public bool IsVerified { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    // ── INSERT DTOs ── carry no GUID and no computed/audit fields. The backend
+    // assigns the id (v7) and CompanyId comes from the route. IsVerified starts
+    // false; LabelName/CreatedAt/UpdatedAt are returned only on the View DTO.
+    public class CompanyEmailInsertDto
+    {
+        public byte LabelId { get; set; }
+        public string EmailAddress { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
+    }
+
+    public class CompanyPhoneInsertDto
+    {
+        public byte LabelId { get; set; }
+        public short CountryId { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
+    }
+
+    public class CompanyAddressInsertDto
+    {
+        public byte LabelId { get; set; }
+        public short CountryId { get; set; }
+        public short RegionId { get; set; }
+        public int CityId { get; set; }
+        public string PostalCode { get; set; } = string.Empty;
+        public string Street1 { get; set; } = string.Empty;
+        public string? Street2 { get; set; }
+        public bool IsPrimary { get; set; }
     }
 }

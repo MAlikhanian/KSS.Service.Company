@@ -3,5 +3,5 @@ using KSS.Entity;
 
 namespace KSS.Service.IService
 {
-    public interface ICompanyService : IBaseService<Company, CompanyDto, CompanyDto, CompanyDto> { }
+    public interface ICompanyService : IBaseService<Company, CompanyDto, CompanyInsertDto, CompanyDto> { }
 }

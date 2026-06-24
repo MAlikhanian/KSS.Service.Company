@@ -7,7 +7,7 @@ using KSS.Helper.CustomAttribute;
 namespace KSS.Api.Controller
 {
     [PermissionGroup("Information")]
-    public class PhoneController : BaseController<Phone, PhoneDto, PhoneDto, PhoneDto>
+    public class PhoneController : BaseController<Phone, PhoneDto, PhoneInsertDto, PhoneDto>
     {
         public PhoneController(IPhoneService service) : base(service) { }
     }
