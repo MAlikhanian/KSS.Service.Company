@@ -56,8 +56,11 @@ namespace KSS.Service.Client
 
                 foreach (var n in names)
                 {
-                    var full = $"{n.FirstName} {n.LastName}".Trim();
-                    result[n.Id] = string.IsNullOrWhiteSpace(full) ? (n.NationalId ?? string.Empty) : full;
+                    // A person with no name in the response is left out, so callers show
+                    // their own placeholder. The national id is never used as a name.
+                    var displayName = ComposePersonDisplayName(n);
+                    if (displayName != null)
+                        result[n.Id] = displayName;
                 }
             }
             catch (Exception ex)
@@ -68,6 +71,12 @@ namespace KSS.Service.Client
             }
 
             return result;
+        }
+
+        private static string? ComposePersonDisplayName(PersonNameDto person)
+        {
+            var full = $"{person.FirstName} {person.LastName}".Trim();
+            return string.IsNullOrWhiteSpace(full) ? null : full;
         }
     }
 }

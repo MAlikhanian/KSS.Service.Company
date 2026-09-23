@@ -70,7 +70,9 @@ namespace KSS.Service.Service
             return new CompanyDetailDto
             {
                 Id = company.Id,
-                CompanyPersianName = persianTranslation?.Name ?? company.NationalId,
+                // Persian only (the Latin name has its own field), then the registry id.
+                CompanyPersianName = CompanyDisplayName.PickCompanyDisplayName(
+                    PersianOnly(persianTranslation), 12, company.NationalId),
                 CompanyLatinName = englishTranslation?.Name,
                 FormerNames = formerNames,
                 RegistrationDate = company.RegistrationDate,
@@ -125,5 +127,10 @@ namespace KSS.Service.Service
             // just succeeded a Modify; Read is implied).
             return (await GetByIdAsync(id, callerPersonId))!;
         }
+
+        private static List<(short LanguageId, string? Name)> PersianOnly(KSS.Entity.Translation? persianTranslation) =>
+            persianTranslation == null
+                ? new List<(short LanguageId, string? Name)>()
+                : new List<(short LanguageId, string? Name)> { (persianTranslation.LanguageId, persianTranslation.Name) };
     }
 }

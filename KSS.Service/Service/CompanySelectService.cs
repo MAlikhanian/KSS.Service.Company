@@ -105,22 +105,32 @@ namespace KSS.Service.Service
                 visibleCompanies = visibleCompanies.Where(c => idList.Contains(c.Id));
             }
 
-            var companiesQuery = from c in visibleCompanies
-                                 join ct in _dbContext.Translations
-                                     on new { CompanyId = c.Id, LanguageId = languageId }
-                                     equals new { ct.CompanyId, ct.LanguageId }
-                                     into translations
-                                 from ct in translations.DefaultIfEmpty()
-                                 select new
-                                 {
-                                     c.Id,
-                                     Name = ct != null ? ct.Name : c.NationalId,
-                                     Code = c.RegistrationNo,
-                                     c.IsActive,
-                                     c.NationalId
-                                 };
+            var companyRows = await visibleCompanies
+                .Select(c => new { c.Id, Code = c.RegistrationNo, c.IsActive, c.NationalId })
+                .AsNoTracking()
+                .ToListAsync();
 
-            var companies = await companiesQuery.AsNoTracking().ToListAsync();
+            // Translations in any language for the visible companies; the name is chosen in
+            // memory (requested language first, then any other; the registry id only when
+            // no language has a name).
+            var translationsByCompany = (await (from t in _dbContext.Translations
+                                                join c in visibleCompanies on t.CompanyId equals c.Id
+                                                select new { t.CompanyId, t.LanguageId, t.Name })
+                                                .AsNoTracking()
+                                                .ToListAsync())
+                .ToLookup(t => t.CompanyId);
+
+            var companies = companyRows.Select(c => new
+            {
+                c.Id,
+                Name = CompanyDisplayName.PickCompanyDisplayName(
+                    translationsByCompany[c.Id].Select(t => (t.LanguageId, (string?)t.Name)),
+                    languageId,
+                    c.NationalId),
+                c.Code,
+                c.IsActive,
+                c.NationalId
+            }).ToList();
 
             // Get all name history with translations for the requested language
             var nameHistories = await (from h in _dbContext.NameHistories

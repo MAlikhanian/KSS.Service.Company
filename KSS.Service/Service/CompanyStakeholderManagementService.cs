@@ -84,18 +84,32 @@ namespace KSS.Service.Service
                 .Distinct()
                 .ToList();
 
-            var companyNames = companyIds.Count == 0
-                ? new Dictionary<Guid, string>()
-                : await (from c in _dbContext.Companies
-                         where companyIds.Contains(c.Id)
-                         join t in _dbContext.Translations
-                             on new { CompanyId = c.Id, LanguageId = languageId }
-                             equals new { t.CompanyId, t.LanguageId }
-                             into tj
-                         from t in tj.DefaultIfEmpty()
-                         select new { c.Id, Name = t != null ? t.Name : c.NationalId })
+            // Company names in any language, chosen in memory: requested language first,
+            // then any other available language; the registry id only when none has a name.
+            var companyNames = new Dictionary<Guid, string>();
+            if (companyIds.Count > 0)
+            {
+                var companies = await _dbContext.Companies
+                    .Where(c => companyIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.NationalId })
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var translationsByCompany = (await _dbContext.Translations
+                        .Where(t => companyIds.Contains(t.CompanyId))
+                        .Select(t => new { t.CompanyId, t.LanguageId, t.Name })
                         .AsNoTracking()
-                        .ToDictionaryAsync(x => x.Id, x => x.Name ?? string.Empty);
+                        .ToListAsync())
+                    .ToLookup(t => t.CompanyId);
+
+                foreach (var c in companies)
+                {
+                    companyNames[c.Id] = CompanyDisplayName.PickCompanyDisplayName(
+                        translationsByCompany[c.Id].Select(t => (t.LanguageId, (string?)t.Name)),
+                        languageId,
+                        c.NationalId ?? string.Empty);
+                }
+            }
 
             CompanyStakeholderHistoryViewDto MapHistory(StakeholderHistory h) => new()
             {
