@@ -9,7 +9,8 @@ namespace KSS.Service.Service
     /// ManagementService that builds the consolidated read-only company view.
     /// Pulls from Company, Translation, NameHistory, NameHistoryTranslation,
     /// Email, EmailLabelTranslation, Phone, PhoneLabelTranslation, Address,
-    /// AddressLabelTranslation, AddressTranslation in a single request.
+    /// AddressLabelTranslation, AddressTranslation, Website, WebsiteLabelTranslation
+    /// in a single request.
     ///
     /// Country/Region/City names are NOT resolved here — those lookups live
     /// in KSS.Service.Common. The BFF layer resolves IDs to names before
@@ -118,6 +119,24 @@ namespace KSS.Service.Service
                                     IsVerified = p.IsVerified,
                                 }).AsNoTracking().ToListAsync();
 
+            // Websites with label name (mirrors CompanyContactService).
+            var websites = await (from w in _dbContext.Websites
+                                where w.CompanyId == companyId
+                                join lt in _dbContext.WebsiteLabelTranslations
+                                    on new { w.LabelId, LanguageId = languageId }
+                                    equals new { LabelId = lt.WebsiteLabelId, lt.LanguageId }
+                                    into labelJoin
+                                from lt in labelJoin.DefaultIfEmpty()
+                                orderby w.IsPrimary descending, w.Url
+                                select new CompanyReadViewWebsiteDto
+                                {
+                                    Id = w.Id,
+                                    LabelId = w.LabelId,
+                                    LabelName = lt != null ? lt.Name : string.Empty,
+                                    Url = w.Url,
+                                    IsPrimary = w.IsPrimary,
+                                }).AsNoTracking().ToListAsync();
+
             // Addresses with label name + street translation.
             var addresses = await (from a in _dbContext.Addresses
                                    where a.CompanyId == companyId
@@ -160,12 +179,12 @@ namespace KSS.Service.Service
                 RegistrationRegionId = company.RegistrationRegionId,
                 RegistrationCityId = company.RegistrationCityId,
                 FoundedDate = company.FoundedDate,
-                Website = company.Website,
                 IsActive = company.IsActive,
                 NameHistory = nameHistory,
                 Emails = emails,
                 Phones = phones,
                 Addresses = addresses,
+                Websites = websites,
             };
         }
     }

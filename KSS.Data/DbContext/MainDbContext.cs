@@ -25,6 +25,7 @@ namespace KSS.Data.DbContexts
         public DbSet<KSS.Entity.AccessSection> AccessSections => Set<KSS.Entity.AccessSection>();
         public DbSet<KSS.Entity.AccessSectionTranslation> AccessSectionTranslations => Set<KSS.Entity.AccessSectionTranslation>();
         public DbSet<KSS.Entity.RoleAccess> RoleAccesses => Set<KSS.Entity.RoleAccess>();
+        public DbSet<KSS.Entity.CompanyOwnership> CompanyOwnerships => Set<KSS.Entity.CompanyOwnership>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,11 @@ namespace KSS.Data.DbContexts
             // One row per (CompanyId, GrantedToPersonId, SectionId) — matches UQ_Access in migration 001.
             modelBuilder.Entity<KSS.Entity.Access>()
                 .HasIndex(a => new { a.CompanyId, a.GrantedToPersonId, a.SectionId })
+                .IsUnique();
+
+            // One ownership row per (OwnerCompanyId, CompanyId).
+            modelBuilder.Entity<KSS.Entity.CompanyOwnership>()
+                .HasIndex(o => new { o.OwnerCompanyId, o.CompanyId })
                 .IsUnique();
 
             // Composite PK for AccessSectionTranslation.

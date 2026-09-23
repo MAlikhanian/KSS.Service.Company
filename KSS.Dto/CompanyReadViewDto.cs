@@ -27,13 +27,13 @@ namespace KSS.Dto
         public short RegistrationRegionId { get; set; }
         public int RegistrationCityId { get; set; }
         public DateTime? FoundedDate { get; set; }
-        public string? Website { get; set; }
         public bool IsActive { get; set; }
 
         public List<CompanyReadViewNameHistoryDto> NameHistory { get; set; } = new();
         public List<CompanyReadViewEmailDto> Emails { get; set; } = new();
         public List<CompanyReadViewPhoneDto> Phones { get; set; } = new();
         public List<CompanyReadViewAddressDto> Addresses { get; set; } = new();
+        public List<CompanyReadViewWebsiteDto> Websites { get; set; } = new();
     }
 
     public class CompanyReadViewNameHistoryDto
@@ -60,6 +60,15 @@ namespace KSS.Dto
         public string EmailAddress { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }
         public bool IsVerified { get; set; }
+    }
+
+    public class CompanyReadViewWebsiteDto
+    {
+        public Guid Id { get; set; }
+        public byte LabelId { get; set; }
+        public string LabelName { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
     }
 
     public class CompanyReadViewPhoneDto

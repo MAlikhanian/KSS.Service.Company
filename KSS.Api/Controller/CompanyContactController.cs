@@ -106,6 +106,31 @@ namespace KSS.Api.Controller
             return NoContent();
         }
 
+        // --- Website CRUD ---
+        [HttpPost("{companyId}/Website")]
+        [HasPermission("Company.Information.Modify")]
+        public async Task<ActionResult<CompanyWebsiteViewDto>> AddWebsite(Guid companyId, [FromBody] CompanyWebsiteInsertDto dto)
+        {
+            var result = await _service.AddWebsiteAsync(companyId, dto);
+            return Ok(result);
+        }
+
+        [HttpPut("Website/{websiteId}")]
+        [HasPermission("Company.Information.Modify")]
+        public async Task<ActionResult<CompanyWebsiteViewDto>> UpdateWebsite(Guid websiteId, [FromBody] CompanyWebsiteViewDto dto)
+        {
+            var result = await _service.UpdateWebsiteAsync(websiteId, dto);
+            return Ok(result);
+        }
+
+        [HttpDelete("Website/{websiteId}")]
+        [HasPermission("Company.Information.Modify")]
+        public async Task<ActionResult> DeleteWebsite(Guid websiteId)
+        {
+            await _service.DeleteWebsiteAsync(websiteId);
+            return NoContent();
+        }
+
         private Guid GetCallerPersonId()
         {
             var raw = User.FindFirstValue("personId")

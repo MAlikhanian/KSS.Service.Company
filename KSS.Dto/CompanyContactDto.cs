@@ -9,6 +9,7 @@ namespace KSS.Dto
         public List<CompanyEmailViewDto> Emails { get; set; } = new();
         public List<CompanyPhoneViewDto> Phones { get; set; } = new();
         public List<CompanyAddressViewDto> Addresses { get; set; } = new();
+        public List<CompanyWebsiteViewDto> Websites { get; set; } = new();
     }
 
     public class CompanyEmailViewDto
@@ -56,6 +57,18 @@ namespace KSS.Dto
         public DateTime? UpdatedAt { get; set; }
     }
 
+    public class CompanyWebsiteViewDto
+    {
+        public Guid Id { get; set; }
+        public Guid CompanyId { get; set; }
+        public byte LabelId { get; set; }
+        public string LabelName { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
     // ── INSERT DTOs ── carry no GUID and no computed/audit fields. The backend
     // assigns the id (v7) and CompanyId comes from the route. IsVerified starts
     // false; LabelName/CreatedAt/UpdatedAt are returned only on the View DTO.
@@ -83,6 +96,13 @@ namespace KSS.Dto
         public string PostalCode { get; set; } = string.Empty;
         public string Street1 { get; set; } = string.Empty;
         public string? Street2 { get; set; }
+        public bool IsPrimary { get; set; }
+    }
+
+    public class CompanyWebsiteInsertDto
+    {
+        public byte LabelId { get; set; }
+        public string Url { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }
     }
 }

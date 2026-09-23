@@ -54,7 +54,6 @@ namespace KSS.Service.Service
                     RegistrationCityId = dto.RegistrationCityId,
                     TaxId = dto.TaxId,
                     FoundedDate = dto.FoundedDate,
-                    Website = dto.Website,
                     LogoUrl = dto.LogoUrl,
                     IsActive = dto.IsActive,
                     CreatedAt = DateTime.UtcNow,

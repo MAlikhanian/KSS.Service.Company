@@ -49,7 +49,6 @@ namespace KSS.Dto
         public int RegistrationCityId { get; set; }
         public string? TaxId { get; set; }
         public DateTime? FoundedDate { get; set; }
-        public string? Website { get; set; }
         public string? LogoUrl { get; set; }
         public bool IsActive { get; set; } = true;
 

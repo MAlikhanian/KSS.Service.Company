@@ -256,7 +256,6 @@ namespace KSS.Api.Middleware
                     "RegistrationNo" => "Registration Number",
                     "NationalId" => "National ID",
                     "TaxId" => "Tax ID",
-                    "Website" => "Website",
                     "LogoUrl" => "Logo URL",
                     _ => columnName
                 };

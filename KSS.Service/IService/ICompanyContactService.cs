@@ -19,5 +19,8 @@ namespace KSS.Service.IService
         Task<CompanyAddressViewDto> AddAddressAsync(Guid companyId, CompanyAddressInsertDto dto, short languageId = 12);
         Task<CompanyAddressViewDto> UpdateAddressAsync(Guid addressId, CompanyAddressViewDto dto, short languageId = 12);
         Task DeleteAddressAsync(Guid addressId);
+        Task<CompanyWebsiteViewDto> AddWebsiteAsync(Guid companyId, CompanyWebsiteInsertDto dto);
+        Task<CompanyWebsiteViewDto> UpdateWebsiteAsync(Guid websiteId, CompanyWebsiteViewDto dto);
+        Task DeleteWebsiteAsync(Guid websiteId);
     }
 }

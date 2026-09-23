@@ -102,11 +102,33 @@ namespace KSS.Service.Service
                                        UpdatedAt = a.UpdatedAt
                                    }).AsNoTracking().ToListAsync();
 
+            // Websites with label names
+            var websites = await (from w in _dbContext.Websites
+                                  where w.CompanyId == companyId
+                                  join lt in _dbContext.WebsiteLabelTranslations
+                                      on new { w.LabelId, LanguageId = languageId }
+                                      equals new { LabelId = lt.WebsiteLabelId, lt.LanguageId }
+                                      into labelJoin
+                                  from lt in labelJoin.DefaultIfEmpty()
+                                  orderby w.IsPrimary descending, w.Url
+                                  select new CompanyWebsiteViewDto
+                                  {
+                                      Id = w.Id,
+                                      CompanyId = w.CompanyId,
+                                      LabelId = w.LabelId,
+                                      LabelName = lt != null ? lt.Name : string.Empty,
+                                      Url = w.Url,
+                                      IsPrimary = w.IsPrimary,
+                                      CreatedAt = w.CreatedAt,
+                                      UpdatedAt = w.UpdatedAt
+                                  }).AsNoTracking().ToListAsync();
+
             return new CompanyContactDto
             {
                 Emails = emails,
                 Phones = phones,
-                Addresses = addresses
+                Addresses = addresses,
+                Websites = websites
             };
         }
 
@@ -325,6 +347,59 @@ namespace KSS.Service.Service
                 _dbContext.Addresses.Remove(entity);
             }
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<CompanyWebsiteViewDto> AddWebsiteAsync(Guid companyId, CompanyWebsiteInsertDto dto)
+        {
+            var entity = new Website
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                LabelId = dto.LabelId,
+                Url = dto.Url.Trim(),
+                IsPrimary = dto.IsPrimary,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _dbContext.Websites.Add(entity);
+            await _dbContext.SaveChangesAsync();
+
+            return new CompanyWebsiteViewDto
+            {
+                Id = entity.Id,
+                CompanyId = entity.CompanyId,
+                LabelId = entity.LabelId,
+                LabelName = string.Empty,
+                Url = entity.Url,
+                IsPrimary = entity.IsPrimary,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+            };
+        }
+
+        public async Task<CompanyWebsiteViewDto> UpdateWebsiteAsync(Guid websiteId, CompanyWebsiteViewDto dto)
+        {
+            var entity = await _dbContext.Websites.FindAsync(websiteId)
+                ?? throw new KeyNotFoundException($"Website {websiteId} not found");
+            entity.LabelId = dto.LabelId;
+            entity.Url = dto.Url.Trim();
+            entity.IsPrimary = dto.IsPrimary;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            dto.Id = entity.Id;
+            dto.CompanyId = entity.CompanyId;
+            return dto;
+        }
+
+        public async Task DeleteWebsiteAsync(Guid websiteId)
+        {
+            var entity = await _dbContext.Websites.FindAsync(websiteId);
+            if (entity != null)
+            {
+                _dbContext.Websites.Remove(entity);
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

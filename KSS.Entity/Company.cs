@@ -33,9 +33,6 @@ namespace KSS.Entity
         public string? TaxId { get; set; } // شناسه مالیاتی
         [Column(TypeName = "DATE")]
         public DateTime? FoundedDate { get; set; } // تاریخ تأسیس
-        [MaxLength(256)]
-        [Column(TypeName = "VARCHAR(256)")]
-        public string? Website { get; set; } // وب‌سایت
         [MaxLength(512)]
         [Column(TypeName = "VARCHAR(512)")]
         public string? LogoUrl { get; set; } // آدرس لوگو
@@ -58,5 +55,8 @@ namespace KSS.Entity
         public ICollection<Email> Emails { get; set; } = new List<Email>();
         public ICollection<Phone> Phones { get; set; } = new List<Phone>();
         public ICollection<Address> Addresses { get; set; } = new List<Address>();
+        public ICollection<CompanyDocument> Documents { get; set; } = new List<CompanyDocument>();
+        public ICollection<Website> Websites { get; set; } = new List<Website>();
+        public ICollection<CompanySoftware> CompanySoftwares { get; set; } = new List<CompanySoftware>();
     }
 }

@@ -116,6 +116,87 @@ CREATE TABLE dbo.[EmailLabelTranslation] (
 CREATE NONCLUSTERED INDEX IX_EmailLabelTranslation_LanguageId ON dbo.[EmailLabelTranslation] (LanguageId);
 GO
 
+-- WebsiteLabel + WebsiteLabelTranslation
+-- ============================================================
+CREATE TABLE dbo.[WebsiteLabel] (
+    Id        TINYINT          IDENTITY(1, 1) NOT NULL, -- شناسه
+    Code      VARCHAR(10)      NOT NULL, -- کد
+    CreatedBy UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt DATETIME2        NULL, -- تاریخ حذف
+    IsActive  BIT              NOT NULL CONSTRAINT DF_WebsiteLabel_IsActive DEFAULT (1), -- فعال
+    CONSTRAINT PK_WebsiteLabel PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT UQ_WebsiteLabel_Code UNIQUE (Code)
+);
+CREATE TABLE dbo.[WebsiteLabelTranslation] (
+    WebsiteLabelId TINYINT          NOT NULL, -- شناسه برچسب وب‌سایت
+    LanguageId     SMALLINT         NOT NULL, -- شناسه زبان
+    Name           NVARCHAR(50)     NOT NULL, -- نام
+    CreatedBy      UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt      DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy      UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt      DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy      UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt      DATETIME2        NULL, -- تاریخ حذف
+    CONSTRAINT PK_WebsiteLabelTranslation PRIMARY KEY CLUSTERED (WebsiteLabelId, LanguageId),
+    CONSTRAINT FK_WebsiteLabelTranslation_WebsiteLabel FOREIGN KEY (WebsiteLabelId) REFERENCES dbo.[WebsiteLabel] (Id) ON DELETE CASCADE
+);
+CREATE NONCLUSTERED INDEX IX_WebsiteLabelTranslation_LanguageId ON dbo.[WebsiteLabelTranslation] (LanguageId);
+GO
+
+-- SoftwareCategory + SoftwareCategoryTranslation
+-- ============================================================
+CREATE TABLE dbo.[SoftwareCategory] (
+    Id        TINYINT          IDENTITY(1, 1) NOT NULL, -- شناسه
+    Code      VARCHAR(10)      NOT NULL, -- کد
+    CreatedBy UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt DATETIME2        NULL, -- تاریخ حذف
+    IsActive  BIT              NOT NULL CONSTRAINT DF_SoftwareCategory_IsActive DEFAULT (1), -- فعال
+    CONSTRAINT PK_SoftwareCategory PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT UQ_SoftwareCategory_Code UNIQUE (Code)
+);
+CREATE TABLE dbo.[SoftwareCategoryTranslation] (
+    SoftwareCategoryId TINYINT          NOT NULL, -- شناسه دسته نرم‌افزار
+    LanguageId         SMALLINT         NOT NULL, -- شناسه زبان
+    Name               NVARCHAR(100)    NOT NULL, -- نام
+    CreatedBy          UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt          DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy          UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt          DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy          UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt          DATETIME2        NULL, -- تاریخ حذف
+    CONSTRAINT PK_SoftwareCategoryTranslation PRIMARY KEY CLUSTERED (SoftwareCategoryId, LanguageId),
+    CONSTRAINT FK_SoftwareCategoryTranslation_Category FOREIGN KEY (SoftwareCategoryId) REFERENCES dbo.[SoftwareCategory] (Id) ON DELETE CASCADE
+);
+CREATE NONCLUSTERED INDEX IX_SoftwareCategoryTranslation_LanguageId ON dbo.[SoftwareCategoryTranslation] (LanguageId);
+GO
+
+-- Software (admin-managed product list; no translations; starts empty)
+-- ============================================================
+CREATE TABLE dbo.[Software] (
+    Id        INT              IDENTITY(1, 1) NOT NULL, -- شناسه
+    Name      NVARCHAR(150)    NOT NULL, -- نام
+    CompanyId UNIQUEIDENTIFIER NOT NULL, -- شناسه شرکت ارائه‌دهنده (provider; FK added in Section 2 below, after dbo.Company exists)
+    CreatedBy UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt DATETIME2        NULL, -- تاریخ حذف
+    IsActive  BIT              NOT NULL CONSTRAINT DF_Software_IsActive DEFAULT (1), -- فعال
+    CONSTRAINT PK_Software PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT UQ_Software_Company_Name UNIQUE (CompanyId, Name)
+);
+CREATE NONCLUSTERED INDEX IX_Software_CompanyId ON dbo.[Software] (CompanyId);
+GO
+
 -- PhoneLabel + PhoneLabelTranslation
 -- ============================================================
 CREATE TABLE dbo.[PhoneLabel] (
@@ -170,7 +251,6 @@ CREATE TABLE dbo.[Company] (
     RegistrationCityId      INT              NOT NULL, -- شهر
     TaxId                   VARCHAR(30)      NULL, -- شناسه مالیاتی
     FoundedDate             DATE             NULL, -- تاریخ تأسیس
-    Website                 VARCHAR(256)     NULL, -- وب‌سایت
     LogoUrl                 VARCHAR(512)     NULL, -- آدرس لوگو
     IsActive                BIT              NOT NULL CONSTRAINT DF_Company_IsActive DEFAULT 1, -- فعال
     CreatedAt               DATETIME2(7)     NOT NULL CONSTRAINT DF_Company_CreatedAt DEFAULT SYSUTCDATETIME(), -- تاریخ ایجاد
@@ -192,6 +272,13 @@ CREATE NONCLUSTERED INDEX IX_Company_RegistrationRegionId ON dbo.[Company] (Regi
 CREATE NONCLUSTERED INDEX IX_Company_RegistrationCityId ON dbo.[Company] (RegistrationCityId);
 CREATE NONCLUSTERED INDEX IX_Company_TaxId ON dbo.[Company] (TaxId) WHERE TaxId IS NOT NULL;
 CREATE NONCLUSTERED INDEX IX_Company_IsActive ON dbo.[Company] (IsActive) WHERE IsActive = 1;
+GO
+
+-- FK_Software_Company (Software.CompanyId — provider company). dbo.[Software] is created earlier
+-- in Section 1 as a lookup table, before dbo.[Company] exists, so the FK is added here as a
+-- separate ALTER TABLE now that the referenced table (Company) exists.
+ALTER TABLE dbo.[Software]
+    ADD CONSTRAINT FK_Software_Company FOREIGN KEY (CompanyId) REFERENCES dbo.[Company] (Id);
 GO
 
 -- ============================================================
@@ -334,6 +421,55 @@ CREATE NONCLUSTERED INDEX IX_Email_LabelId ON dbo.[Email] (LabelId);
 CREATE UNIQUE NONCLUSTERED INDEX UX_Email_Company_Email ON dbo.[Email] (CompanyId, Email);
 CREATE NONCLUSTERED INDEX IX_Email_Email ON dbo.[Email] (Email);
 CREATE UNIQUE NONCLUSTERED INDEX UX_Email_Company_Primary ON dbo.[Email] (CompanyId) WHERE IsPrimary = 1;
+GO
+
+-- Website (depends on Company, WebsiteLabel)
+-- ============================================================
+CREATE TABLE dbo.[Website] (
+    Id        UNIQUEIDENTIFIER NOT NULL, -- شناسه
+    CompanyId UNIQUEIDENTIFIER NOT NULL, -- شناسه شرکت
+    LabelId   TINYINT          NOT NULL, -- شناسه برچسب
+    Url       VARCHAR(256)     NOT NULL, -- آدرس وب‌سایت
+    IsPrimary BIT              NOT NULL CONSTRAINT DF_Website_IsPrimary DEFAULT (0), -- اصلی
+    CreatedBy UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt DATETIME2        NULL, -- تاریخ حذف
+    IsActive  BIT              NOT NULL CONSTRAINT DF_Website_IsActive DEFAULT (1), -- فعال
+    CONSTRAINT PK_Website PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Website_Company FOREIGN KEY (CompanyId) REFERENCES dbo.[Company] (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_Website_Label FOREIGN KEY (LabelId) REFERENCES dbo.[WebsiteLabel] (Id),
+    CONSTRAINT CK_Website_Url CHECK (Url NOT LIKE '% %' AND LEN(Url) >= 3)
+);
+CREATE NONCLUSTERED INDEX IX_Website_CompanyId ON dbo.[Website] (CompanyId);
+CREATE NONCLUSTERED INDEX IX_Website_LabelId ON dbo.[Website] (LabelId);
+CREATE UNIQUE NONCLUSTERED INDEX UX_Website_Company_Url ON dbo.[Website] (CompanyId, Url);
+CREATE UNIQUE NONCLUSTERED INDEX UX_Website_Company_Primary ON dbo.[Website] (CompanyId) WHERE IsPrimary = 1;
+GO
+
+-- CompanySoftware (depends on Company, SoftwareCategory, Software; one Software per Company+Category)
+-- ============================================================
+CREATE TABLE dbo.[CompanySoftware] (
+    Id                 UNIQUEIDENTIFIER NOT NULL, -- شناسه
+    CompanyId          UNIQUEIDENTIFIER NOT NULL, -- شناسه شرکت
+    SoftwareCategoryId TINYINT          NOT NULL, -- شناسه دسته نرم‌افزار
+    SoftwareId         INT              NOT NULL, -- شناسه نرم‌افزار
+    CreatedBy          UNIQUEIDENTIFIER NOT NULL, -- ایجادکننده
+    CreatedAt          DATETIME2        NOT NULL, -- تاریخ ایجاد
+    UpdatedBy          UNIQUEIDENTIFIER NULL, -- به‌روزرسانی‌کننده
+    UpdatedAt          DATETIME2        NULL, -- تاریخ به‌روزرسانی
+    DeletedBy          UNIQUEIDENTIFIER NULL, -- حذف‌کننده
+    DeletedAt          DATETIME2        NULL, -- تاریخ حذف
+    IsActive           BIT              NOT NULL CONSTRAINT DF_CompanySoftware_IsActive DEFAULT (1), -- فعال
+    CONSTRAINT PK_CompanySoftware PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_CompanySoftware_Company  FOREIGN KEY (CompanyId)          REFERENCES dbo.[Company] (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_CompanySoftware_Category FOREIGN KEY (SoftwareCategoryId) REFERENCES dbo.[SoftwareCategory] (Id),
+    CONSTRAINT FK_CompanySoftware_Software FOREIGN KEY (SoftwareId)         REFERENCES dbo.[Software] (Id)
+);
+CREATE NONCLUSTERED INDEX IX_CompanySoftware_CompanyId ON dbo.[CompanySoftware] (CompanyId);
+CREATE UNIQUE NONCLUSTERED INDEX UX_CompanySoftware_Company_Category ON dbo.[CompanySoftware] (CompanyId, SoftwareCategoryId);
 GO
 
 -- Phone (depends on Company, PhoneLabel)
@@ -736,6 +872,66 @@ INSERT INTO dbo.[EmailLabelTranslation] (EmailLabelId, LanguageId, Name)
 SELECT el.Id AS EmailLabelId, l.Id AS LanguageId, v.Name
 FROM v
 JOIN dbo.[EmailLabel] el ON el.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
+GO
+
+-- ============================================================
+-- Seed: WebsiteLabel
+-- ============================================================
+INSERT INTO dbo.[WebsiteLabel] (Code, CreatedBy, CreatedAt) VALUES
+    ('Main',    '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('Support', '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('Shop',    '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('Careers', '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('Other',   '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME());
+GO
+;WITH v AS (
+    SELECT Code, LangCode, Name FROM (VALUES
+        ('Main',    'en', N'Main'),      ('Main',    'fa', N'اصلی'),
+        ('Support', 'en', N'Support'),   ('Support', 'fa', N'پشتیبانی'),
+        ('Shop',    'en', N'Shop'),      ('Shop',    'fa', N'فروشگاه'),
+        ('Careers', 'en', N'Careers'),   ('Careers', 'fa', N'استخدام'),
+        ('Other',   'en', N'Other'),     ('Other',   'fa', N'سایر')
+    ) AS x(Code, LangCode, Name)
+)
+INSERT INTO dbo.[WebsiteLabelTranslation] (WebsiteLabelId, LanguageId, Name, CreatedBy, CreatedAt)
+SELECT wl.Id AS WebsiteLabelId, l.Id AS LanguageId, v.Name, '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()
+FROM v
+JOIN dbo.[WebsiteLabel] wl ON wl.Code = v.Code
+JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
+GO
+
+-- ============================================================
+-- Seed: SoftwareCategory (Software itself starts empty — admin-managed, no seed)
+-- ============================================================
+INSERT INTO dbo.[SoftwareCategory] (Code, CreatedBy, CreatedAt) VALUES
+    ('BOSEC',  '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('BOCOM',  '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('OTSEC',  '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('OTFSEC', '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('OTFCOM', '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('ACC',    '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('PMS',    '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('CMS',    '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()),
+    ('CALL',   '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME());
+GO
+;WITH v AS (
+    SELECT Code, LangCode, Name FROM (VALUES
+        ('BOSEC',  'en', N'Back Office (Securities Exchange)'),      ('BOSEC',  'fa', N'بک‌آفیس بورس اوراق بهادار'),
+        ('BOCOM',  'en', N'Back Office (Commodities Exchange)'),     ('BOCOM',  'fa', N'بک‌آفیس بورس کالا'),
+        ('OTSEC',  'en', N'Online Trading (Securities)'),            ('OTSEC',  'fa', N'معاملات آنلاین اوراق بهادار'),
+        ('OTFSEC', 'en', N'Online Trading (Futures - Securities)'),  ('OTFSEC', 'fa', N'معاملات آنلاین آتی اوراق'),
+        ('OTFCOM', 'en', N'Online Trading (Futures - Commodities)'), ('OTFCOM', 'fa', N'معاملات آنلاین آتی کالا'),
+        ('ACC',    'en', N'Accounting System'),                      ('ACC',    'fa', N'سیستم حسابداری'),
+        ('PMS',    'en', N'Portfolio Management Software'),          ('PMS',    'fa', N'نرم‌افزار مدیریت پرتفوی'),
+        ('CMS',    'en', N'Website CMS'),                             ('CMS',    'fa', N'سیستم مدیریت محتوای وب‌سایت'),
+        ('CALL',   'en', N'Call Center System'),                      ('CALL',   'fa', N'سیستم مرکز تماس')
+    ) AS x(Code, LangCode, Name)
+)
+INSERT INTO dbo.[SoftwareCategoryTranslation] (SoftwareCategoryId, LanguageId, Name, CreatedBy, CreatedAt)
+SELECT sc.Id AS SoftwareCategoryId, l.Id AS LanguageId, v.Name, '00000000-0000-0000-0000-000000000001', SYSUTCDATETIME()
+FROM v
+JOIN dbo.[SoftwareCategory] sc ON sc.Code = v.Code
 JOIN KSS_Common_Prod.dbo.[Language] l ON l.Code = v.LangCode;
 GO
 

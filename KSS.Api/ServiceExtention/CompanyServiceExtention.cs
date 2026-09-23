@@ -35,6 +35,20 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IAddressLabelService, AddressLabelService>();
             services.AddScoped<IAddressLabelTranslationRepository, AddressLabelTranslationRepository>();
             services.AddScoped<IAddressLabelTranslationService, AddressLabelTranslationService>();
+            services.AddScoped<IWebsiteLabelRepository, WebsiteLabelRepository>();
+            services.AddScoped<IWebsiteLabelService, WebsiteLabelService>();
+            services.AddScoped<IWebsiteLabelTranslationRepository, WebsiteLabelTranslationRepository>();
+            services.AddScoped<IWebsiteLabelTranslationService, WebsiteLabelTranslationService>();
+            services.AddScoped<ISoftwareCategoryRepository, SoftwareCategoryRepository>();
+            services.AddScoped<ISoftwareCategoryService, SoftwareCategoryService>();
+            services.AddScoped<ISoftwareCategoryTranslationRepository, SoftwareCategoryTranslationRepository>();
+            services.AddScoped<ISoftwareCategoryTranslationService, SoftwareCategoryTranslationService>();
+            services.AddScoped<ISoftwareRepository, SoftwareRepository>();
+            services.AddScoped<ISoftwareService, SoftwareService>();
+            services.AddScoped<ICompanyDocumentTypeRepository, CompanyDocumentTypeRepository>();
+            services.AddScoped<ICompanyDocumentTypeService, CompanyDocumentTypeService>();
+            services.AddScoped<ICompanyDocumentTypeTranslationRepository, CompanyDocumentTypeTranslationRepository>();
+            services.AddScoped<ICompanyDocumentTypeTranslationService, CompanyDocumentTypeTranslationService>();
 
             // Main Company services
             services.AddScoped<ICompanyRepository, CompanyRepository>();
@@ -57,6 +71,8 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<ICompanyStakeholderManagementService, CompanyStakeholderManagementService>();
             services.AddScoped<IFinancialInfoRepository, FinancialInfoRepository>();
             services.AddScoped<IFinancialInfoService, FinancialInfoService>();
+            services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository>();
+            services.AddScoped<ICompanyDocumentService, CompanyDocumentService>();
 
             // Contact data services
             services.AddScoped<IEmailRepository, EmailRepository>();
@@ -67,13 +83,22 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IAddressTranslationRepository, AddressTranslationRepository>();
             services.AddScoped<IAddressTranslationService, AddressTranslationService>();
+            services.AddScoped<IWebsiteRepository, WebsiteRepository>();
+            services.AddScoped<IWebsiteService, WebsiteService>();
             services.AddScoped<ICompanyContactService, CompanyContactService>();
+            services.AddScoped<ICompanySoftwareRepository, CompanySoftwareRepository>();
+            services.AddScoped<ICompanySoftwareManagementService, CompanySoftwareManagementService>();
 
             // Access + RoleAccess (per-section access on companies)
             services.AddScoped<IAccessRepository, AccessRepository>();
             services.AddScoped<IAccessService, AccessService>();
             services.AddScoped<IRoleAccessRepository, RoleAccessRepository>();
             services.AddScoped<IRoleAccessService, RoleAccessService>();
+
+            // Company ownership (tenant assignment) + current-company resolver.
+            services.AddScoped<ICompanyOwnershipRepository, CompanyOwnershipRepository>();
+            services.AddScoped<ICompanyOwnershipService, CompanyOwnershipService>();
+            services.AddScoped<ICurrentCompany, CurrentCompany>();
 
             // Required so AccessService can read JWT claims for the caller's roleIds.
             services.AddHttpContextAccessor();

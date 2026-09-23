@@ -11,7 +11,6 @@ namespace KSS.Dto
         public string Code { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public string? NationalId { get; set; }
-        public string? Website { get; set; }
         public List<NameHistoryDto> NameHistory { get; set; } = new();
     }
 }

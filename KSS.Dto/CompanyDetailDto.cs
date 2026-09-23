@@ -27,7 +27,6 @@ namespace KSS.Dto
         public short RegistrationRegionId { get; set; }
         public int RegistrationCityId { get; set; }
         public DateTime? FoundedDate { get; set; }
-        public string? Website { get; set; }
         public bool IsActive { get; set; }
 
         // Audit (Company record)

@@ -71,6 +71,9 @@ namespace KSS.Data.Configuration
             b.HasMany(x => x.Emails).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
             b.HasMany(x => x.Phones).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
             b.HasMany(x => x.Addresses).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.Documents).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.Websites).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.CompanySoftwares).WithOne(x => x.Company).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 
@@ -246,6 +249,104 @@ namespace KSS.Data.Configuration
         public void Configure(EntityTypeBuilder<AddressTranslation> b)
         {
             b.HasKey(x => new { x.AddressId, x.LanguageId });
+        }
+    }
+
+    public class WebsiteConfiguration : IEntityTypeConfiguration<Website>
+    {
+        public void Configure(EntityTypeBuilder<Website> b)
+        {
+            b.HasOne(x => x.Label).WithMany(x => x.Websites).HasForeignKey(x => x.LabelId).OnDelete(DeleteBehavior.Restrict);
+
+            // Unique constraint: (CompanyId, Url) — no duplicate URL per company
+            b.HasIndex(x => new { x.CompanyId, x.Url }).IsUnique();
+
+            // Unique filtered index: one primary per company
+            b.HasIndex(x => x.CompanyId).IsUnique().HasFilter("[IsPrimary] = 1");
+        }
+    }
+
+    public class WebsiteLabelConfiguration : IEntityTypeConfiguration<WebsiteLabel>
+    {
+        public void Configure(EntityTypeBuilder<WebsiteLabel> b)
+        {
+            b.HasMany(x => x.Translations).WithOne(x => x.WebsiteLabel).HasForeignKey(x => x.WebsiteLabelId).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class WebsiteLabelTranslationConfiguration : IEntityTypeConfiguration<WebsiteLabelTranslation>
+    {
+        public void Configure(EntityTypeBuilder<WebsiteLabelTranslation> b)
+        {
+            b.HasKey(x => new { x.WebsiteLabelId, x.LanguageId });
+        }
+    }
+
+    public class CompanySoftwareConfiguration : IEntityTypeConfiguration<CompanySoftware>
+    {
+        public void Configure(EntityTypeBuilder<CompanySoftware> b)
+        {
+            b.HasOne(x => x.Category).WithMany(x => x.CompanySoftwares).HasForeignKey(x => x.SoftwareCategoryId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Software).WithMany(x => x.CompanySoftwares).HasForeignKey(x => x.SoftwareId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.CompanyId, x.SoftwareCategoryId }).IsUnique();
+        }
+    }
+
+    public class SoftwareCategoryConfiguration : IEntityTypeConfiguration<SoftwareCategory>
+    {
+        public void Configure(EntityTypeBuilder<SoftwareCategory> b)
+        {
+            b.HasMany(x => x.Translations).WithOne(x => x.SoftwareCategory).HasForeignKey(x => x.SoftwareCategoryId).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class SoftwareCategoryTranslationConfiguration : IEntityTypeConfiguration<SoftwareCategoryTranslation>
+    {
+        public void Configure(EntityTypeBuilder<SoftwareCategoryTranslation> b)
+        {
+            b.HasKey(x => new { x.SoftwareCategoryId, x.LanguageId });
+        }
+    }
+
+    public class SoftwareConfiguration : IEntityTypeConfiguration<Software>
+    {
+        public void Configure(EntityTypeBuilder<Software> b)
+        {
+            // Software name is unique PER PROVIDER — two providers can each have a
+            // same-named product; the cascade (provider→software) disambiguates.
+            b.HasIndex(x => new { x.CompanyId, x.Name }).IsUnique();
+            // Provider company. NO ACTION to avoid a multiple-cascade-path conflict
+            // with CompanySoftware.CompanyId (cascade). No inverse nav on Company.
+            b.HasOne(x => x.Company).WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => x.CompanyId);
+        }
+    }
+
+    // Company documents (metadata) + their type lookup/translation.
+    public class CompanyDocumentConfiguration : IEntityTypeConfiguration<CompanyDocument>
+    {
+        public void Configure(EntityTypeBuilder<CompanyDocument> b)
+        {
+            // Restrict delete on the type — a document type in use can't be removed.
+            b.HasOne(x => x.CompanyDocumentType).WithMany(x => x.Documents).HasForeignKey(x => x.CompanyDocumentTypeId).OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => x.CompanyId);
+        }
+    }
+
+    public class CompanyDocumentTypeConfiguration : IEntityTypeConfiguration<CompanyDocumentType>
+    {
+        public void Configure(EntityTypeBuilder<CompanyDocumentType> b)
+        {
+            b.HasMany(x => x.Translations).WithOne(x => x.CompanyDocumentType).HasForeignKey(x => x.CompanyDocumentTypeId).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class CompanyDocumentTypeTranslationConfiguration : IEntityTypeConfiguration<CompanyDocumentTypeTranslation>
+    {
+        public void Configure(EntityTypeBuilder<CompanyDocumentTypeTranslation> b)
+        {
+            b.HasKey(x => new { x.CompanyDocumentTypeId, x.LanguageId });
         }
     }
 

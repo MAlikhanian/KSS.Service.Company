@@ -117,8 +117,7 @@ namespace KSS.Service.Service
                                      Name = ct != null ? ct.Name : c.NationalId,
                                      Code = c.RegistrationNo,
                                      c.IsActive,
-                                     c.NationalId,
-                                     c.Website
+                                     c.NationalId
                                  };
 
             var companies = await companiesQuery.AsNoTracking().ToListAsync();
@@ -153,8 +152,7 @@ namespace KSS.Service.Service
                     Name = c.Name,
                     Code = c.Code,
                     IsActive = c.IsActive,
-                    NationalId = c.NationalId,
-                    Website = c.Website
+                    NationalId = c.NationalId
                 };
 
                 if (historyByCompany.TryGetValue(c.Id, out var histories))

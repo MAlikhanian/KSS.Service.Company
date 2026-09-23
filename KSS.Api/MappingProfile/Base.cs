@@ -10,6 +10,8 @@ namespace KSS.Api.MappingProfile
         {
             // Company entities
             CreateMap<Company, CompanyDto>().ReverseMap();
+            CreateMap<CompanyOwnership, CompanyOwnershipViewDto>().ReverseMap();
+            CreateMap<CompanyOwnershipInsertDto, CompanyOwnership>().ReverseMap();
             CreateMap<Translation, TranslationDto>().ReverseMap();
             CreateMap<CompanyInsertDto, Company>()
                 .ForMember(dest => dest.Translations, opt => opt.Ignore()) // Translations handled separately
@@ -34,6 +36,18 @@ namespace KSS.Api.MappingProfile
             CreateMap<AddressLabelTranslation, AddressLabelTranslationDto>().ReverseMap();
             CreateMap<Address, AddressDto>().ReverseMap();
             CreateMap<AddressTranslation, AddressTranslationDto>().ReverseMap();
+            CreateMap<WebsiteLabel, WebsiteLabelDto>().ReverseMap();
+            CreateMap<WebsiteLabelTranslation, WebsiteLabelTranslationDto>().ReverseMap();
+            CreateMap<Website, WebsiteDto>().ReverseMap();
+            CreateMap<SoftwareCategory, SoftwareCategoryDto>().ReverseMap();
+            CreateMap<SoftwareCategoryTranslation, SoftwareCategoryTranslationDto>().ReverseMap();
+            CreateMap<Software, SoftwareDto>().ReverseMap();
+            CreateMap<CompanySoftware, CompanySoftwareDto>().ReverseMap();
+
+            // Company documents + document-type lookup/translation
+            CreateMap<CompanyDocument, CompanyDocumentViewDto>().ReverseMap();
+            CreateMap<CompanyDocumentType, CompanyDocumentTypeDto>().ReverseMap();
+            CreateMap<CompanyDocumentTypeTranslation, CompanyDocumentTypeTranslationDto>().ReverseMap();
 
             // Insert DTOs (no Id) — backend stamps the v7 GUID; a client GUID can't bind.
             CreateMap<AddressInsertDto, Address>();
@@ -43,6 +57,12 @@ namespace KSS.Api.MappingProfile
             CreateMap<FinancialInfoInsertDto, FinancialInfo>();
             CreateMap<StakeholderInsertDto, Stakeholder>();
             CreateMap<StakeholderHistoryInsertDto, StakeholderHistory>();
+            CreateMap<CompanyDocumentInsertDto, CompanyDocument>();
+            CreateMap<CompanyDocumentUpdateDto, CompanyDocument>();
+            CreateMap<WebsiteInsertDto, Website>();
+            CreateMap<SoftwareInsertDto, Software>();
+            CreateMap<SoftwareUpdateDto, Software>();
+            CreateMap<CompanySoftwareInsertDto, CompanySoftware>();
 
             // Access + RoleAccess
             CreateMap<Access, AccessDto>().ReverseMap();

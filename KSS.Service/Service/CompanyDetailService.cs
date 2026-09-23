@@ -81,7 +81,6 @@ namespace KSS.Service.Service
                 RegistrationRegionId = company.RegistrationRegionId,
                 RegistrationCityId = company.RegistrationCityId,
                 FoundedDate = company.FoundedDate,
-                Website = company.Website,
                 IsActive = company.IsActive,
                 CreatedAt = company.CreatedAt,
                 UpdatedAt = company.UpdatedAt,
@@ -114,7 +113,6 @@ namespace KSS.Service.Service
             company.RegistrationRegionId = dto.RegistrationRegionId;
             company.RegistrationCityId = dto.RegistrationCityId;
             company.FoundedDate = dto.FoundedDate;
-            company.Website = dto.Website;
             company.IsActive = dto.IsActive;
 
             // NOTE: Company name (Translation) is NOT updated here.

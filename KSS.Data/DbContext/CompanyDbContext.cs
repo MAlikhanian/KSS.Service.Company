@@ -18,6 +18,13 @@ namespace KSS.Data.DbContexts
         public DbSet<PhoneLabelTranslation> PhoneLabelTranslations { get; set; }
         public DbSet<AddressLabel> AddressLabels { get; set; }
         public DbSet<AddressLabelTranslation> AddressLabelTranslations { get; set; }
+        public DbSet<WebsiteLabel> WebsiteLabels { get; set; }
+        public DbSet<WebsiteLabelTranslation> WebsiteLabelTranslations { get; set; }
+        public DbSet<SoftwareCategory> SoftwareCategories { get; set; }
+        public DbSet<SoftwareCategoryTranslation> SoftwareCategoryTranslations { get; set; }
+        public DbSet<Software> Softwares { get; set; }
+        public DbSet<CompanyDocumentType> CompanyDocumentTypes { get; set; }
+        public DbSet<CompanyDocumentTypeTranslation> CompanyDocumentTypeTranslations { get; set; }
 
         // Main entities
         public DbSet<Company> Companies { get; set; }
@@ -33,5 +40,10 @@ namespace KSS.Data.DbContexts
         public DbSet<Phone> Phones { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<AddressTranslation> AddressTranslations { get; set; }
+        public DbSet<Website> Websites { get; set; }
+        public DbSet<CompanySoftware> CompanySoftwares { get; set; }
+
+        // Documents (metadata only — bytes live in FileStorage via FileOrchestrator)
+        public DbSet<CompanyDocument> CompanyDocuments { get; set; }
     }
 }
