@@ -1,20 +1,28 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using KSS.Data.DbContexts;
 using KSS.Dto;
 using KSS.Entity;
+using KSS.Helper;
 using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
     public class CompanySoftwareManagementService : ICompanySoftwareManagementService
     {
+        private const int ModifyLevel = 2;
+        private const string ModifyDenied = "You do not have permission to modify this company's software.";
+
         private readonly MainDbContext _dbContext;
         private readonly IAccessService _accessService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CompanySoftwareManagementService(MainDbContext dbContext, IAccessService accessService)
+        public CompanySoftwareManagementService(MainDbContext dbContext, IAccessService accessService, IHttpContextAccessor httpContextAccessor)
         {
             _dbContext = dbContext;
             _accessService = accessService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<List<CompanySoftwareSlotDto>?> GetSlotsAsync(Guid companyId, Guid callerPersonId, short languageId = 12)
@@ -78,6 +86,9 @@ namespace KSS.Service.Service
 
         public async Task UpsertAsync(Guid companyId, CompanySoftwareUpsertDto dto)
         {
+            // The slot row is keyed by this company, so the target is also the stored row's company.
+            await RequireCompanySoftwareModifyAsync(companyId);
+
             var existing = await _dbContext.CompanySoftwares
                 .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.SoftwareCategoryId == dto.SoftwareCategoryId);
             if (existing != null)
@@ -102,6 +113,8 @@ namespace KSS.Service.Service
 
         public async Task ClearAsync(Guid companyId, byte softwareCategoryId)
         {
+            await RequireCompanySoftwareModifyAsync(companyId);
+
             var existing = await _dbContext.CompanySoftwares
                 .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.SoftwareCategoryId == softwareCategoryId);
             if (existing != null)
@@ -109,6 +122,27 @@ namespace KSS.Service.Service
                 _dbContext.CompanySoftwares.Remove(existing);
                 await _dbContext.SaveChangesAsync();
             }
+        }
+
+        // The Information.Modify permission (checked by the controller attribute) is
+        // global to the caller. This confirms the caller also holds Information level 2
+        // on the specific company being changed. Fails closed: no caller, or a lower
+        // level, is denied.
+        private async Task RequireCompanySoftwareModifyAsync(Guid companyId)
+        {
+            var levels = await _accessService.GetLevelsAsync(companyId, GetCallerPersonId());
+            if (levels.Information < ModifyLevel)
+                throw new BusinessRuleException(ModifyDenied);
+        }
+
+        private Guid GetCallerPersonId()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var raw = user?.FindFirstValue("personId")
+                   ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(raw) || !Guid.TryParse(raw, out var personId))
+                throw new BusinessRuleException("Caller PersonId not found on the JWT.");
+            return personId;
         }
     }
 }

@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using KSS.Helper;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
+using Microsoft.AspNetCore.Http;
 
 namespace KSS.Service.Service
 {
@@ -17,24 +19,35 @@ namespace KSS.Service.Service
     /// </summary>
     public class CompanyNameManagementService : ICompanyNameManagementService
     {
+        private const int ModifyLevel = 2;
+        private const string ModifyDenied = "You do not have permission to modify this company's names.";
+        private const string NotThisCompany = "Name history entry not found for this company.";
+        private const string NameHistoryNotFound = "Name history entry not found.";
+
         private readonly INameHistoryService _nameHistoryService;
         private readonly INameHistoryTranslationService _translationService;
         private readonly INameHistoryTranslationRepository _translationRepository;
         private readonly INameHistoryRepository _nameHistoryRepository;
         private readonly ITranslationRepository _companyTranslationRepository;
+        private readonly IAccessService _accessService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public CompanyNameManagementService(
             INameHistoryService nameHistoryService,
             INameHistoryTranslationService translationService,
             INameHistoryTranslationRepository translationRepository,
             INameHistoryRepository nameHistoryRepository,
-            ITranslationRepository companyTranslationRepository)
+            ITranslationRepository companyTranslationRepository,
+            IAccessService accessService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _nameHistoryService = nameHistoryService;
             _translationService = translationService;
             _translationRepository = translationRepository;
             _nameHistoryRepository = nameHistoryRepository;
             _companyTranslationRepository = companyTranslationRepository;
+            _accessService = accessService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -45,6 +58,8 @@ namespace KSS.Service.Service
         /// </summary>
         public async Task<ServiceResult> AddNameWithTranslationsAsync(AddNameWithTranslationsDto dto)
         {
+            await RequireCompanyNameModifyAsync(dto.CompanyId);
+
             // 1) Create the name history record — id generated here (v7) because
             // the translations below reference it as a FK in the same operation.
             var nameHistoryId = Guid.CreateVersion7();
@@ -86,6 +101,15 @@ namespace KSS.Service.Service
         /// </summary>
         public async Task UpsertTranslationsAsync(UpsertNameTranslationsDto dto)
         {
+            // The stored name history entry decides the company. It is resolved and
+            // checked before any translation is written.
+            var nameHistory = _nameHistoryRepository.SingleOrDefault(
+                h => h.Id == dto.NameHistoryId)
+                ?? throw new KeyNotFoundException(NameHistoryNotFound);
+            await RequireCompanyNameModifyAsync(nameHistory.CompanyId);
+            if (dto.CompanyId != Guid.Empty && dto.CompanyId != nameHistory.CompanyId)
+                throw new BusinessRuleException(NotThisCompany);
+
             // Get existing translations for this name history entry
             var existing = _translationRepository.ToList(
                 t => t.NameHistoryId == dto.NameHistoryId);
@@ -108,13 +132,7 @@ namespace KSS.Service.Service
             }
 
             // Sync Translation with the current name (always, to stay consistent)
-            var nameHistory = _nameHistoryRepository.SingleOrDefault(
-                h => h.Id == dto.NameHistoryId);
-
-            if (nameHistory != null)
-            {
-                SyncCurrentNameToCompanyTranslation(nameHistory.CompanyId);
-            }
+            SyncCurrentNameToCompanyTranslation(nameHistory.CompanyId);
         }
 
         /// <summary>
@@ -123,12 +141,19 @@ namespace KSS.Service.Service
         /// </summary>
         public ServiceResult DeleteNameHistory(Guid id, Guid companyId)
         {
-            var result = _nameHistoryService.DeleteNameHistory(id, companyId);
+            // The stored entry decides the company; an entry of another company is
+            // treated as not found for the one requested, as the delete rule already does.
+            var stored = _nameHistoryRepository.SingleOrDefault(h => h.Id == id);
+            if (stored == null || stored.CompanyId != companyId)
+                return ServiceResult.Fail(NotThisCompany);
+            RequireCompanyNameModifyAsync(stored.CompanyId).GetAwaiter().GetResult();
+
+            var result = _nameHistoryService.DeleteNameHistory(id, stored.CompanyId);
             if (!result.Success) return result;
 
             // After delete, the previous entry is now current (EndDate was cleared).
             // Sync its translations to Translation.
-            SyncCurrentNameToCompanyTranslation(companyId);
+            SyncCurrentNameToCompanyTranslation(stored.CompanyId);
 
             return ServiceResult.Ok();
         }
@@ -139,6 +164,14 @@ namespace KSS.Service.Service
         /// </summary>
         public ServiceResult RemoveTranslation(RemoveTranslationDto dto)
         {
+            // The stored name history entry decides the company. It is resolved and
+            // checked before anything is removed.
+            var nameHistory = _nameHistoryRepository.SingleOrDefault(
+                h => h.Id == dto.NameHistoryId);
+            if (nameHistory == null)
+                return ServiceResult.Fail(NameHistoryNotFound);
+            RequireCompanyNameModifyAsync(nameHistory.CompanyId).GetAwaiter().GetResult();
+
             // Prevent deleting the last translation
             var translationCount = _translationRepository.Count(
                 t => t.NameHistoryId == dto.NameHistoryId);
@@ -161,10 +194,7 @@ namespace KSS.Service.Service
             _translationService.Remove(entity);
 
             // If this name history is the current one, also remove from Translation
-            var nameHistory = _nameHistoryRepository.SingleOrDefault(
-                h => h.Id == dto.NameHistoryId);
-
-            if (nameHistory != null && nameHistory.EndDate == null)
+            if (nameHistory.EndDate == null)
             {
                 var companyTranslation = _companyTranslationRepository.SingleOrDefault(
                     t => t.CompanyId == nameHistory.CompanyId && t.LanguageId == dto.LanguageId);
@@ -227,6 +257,27 @@ namespace KSS.Service.Service
                 };
                 _companyTranslationRepository.Add(newTranslation);
             }
+        }
+
+        // The Information.Modify permission (checked by the controller attribute) is
+        // global to the caller. This confirms the caller also holds Information level 2
+        // on the specific company being changed. Fails closed: no caller, or a lower
+        // level, is denied.
+        private async Task RequireCompanyNameModifyAsync(Guid companyId)
+        {
+            var levels = await _accessService.GetLevelsAsync(companyId, GetCallerPersonId());
+            if (levels.Information < ModifyLevel)
+                throw new BusinessRuleException(ModifyDenied);
+        }
+
+        private Guid GetCallerPersonId()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var raw = user?.FindFirstValue("personId")
+                   ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(raw) || !Guid.TryParse(raw, out var personId))
+                throw new BusinessRuleException("Caller PersonId not found on the JWT.");
+            return personId;
         }
     }
 }
