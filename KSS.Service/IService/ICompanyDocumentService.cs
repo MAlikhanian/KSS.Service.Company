@@ -12,6 +12,6 @@ namespace KSS.Service.IService
         Task<CompanyDocumentViewDto> CreateAsync(CompanyDocumentInsertDto dto);
 
         /// <summary>Delete a document row by key.</summary>
-        void DeleteById(Guid id);
+        Task DeleteByIdAsync(Guid id);
     }
 }

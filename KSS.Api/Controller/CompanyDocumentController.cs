@@ -22,6 +22,7 @@ namespace KSS.Api.Controller
         /// "ByCompany" segment, so the template is just "{companyId}".
         /// </summary>
         [HttpGet("{companyId}")]
+        [HasPermission("Company.Information.Read")]
         public async Task<ActionResult> ByCompany(Guid companyId)
             => Ok(await _companyDocumentService.GetByCompanyAsync(companyId));
 
@@ -32,6 +33,7 @@ namespace KSS.Api.Controller
         /// to upload the file bytes through the orchestrator.
         /// </summary>
         [HttpPost]
+        [HasPermission("Company.Information.Modify")]
         public async Task<ActionResult> Create([FromBody] CompanyDocumentInsertDto dto)
             => Ok(await _companyDocumentService.CreateAsync(dto));
 
@@ -41,9 +43,10 @@ namespace KSS.Api.Controller
         /// full entity whose non-nullable nav props would be implicitly required).
         /// </summary>
         [HttpDelete("{id}")]
-        public ActionResult ById(Guid id)
+        [HasPermission("Company.Information.Modify")]
+        public async Task<ActionResult> ById(Guid id)
         {
-            _companyDocumentService.DeleteById(id);
+            await _companyDocumentService.DeleteByIdAsync(id);
             return NoContent();
         }
     }
