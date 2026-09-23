@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace KSS.Service.Service
 {
-    public class CompanyDocumentService : BaseService<CompanyDocument, CompanyDocumentViewDto, CompanyDocumentInsertDto, CompanyDocumentUpdateDto>, ICompanyDocumentService
+    public class CompanyDocumentService : BaseService<CompanyDocument, CompanyDocumentViewDto, CompanyDocumentInsertDto, CompanyDocumentUpdateDto>, ICompanyDocumentService, ICompanyScopedWrites
     {
         private const int ReadLevel = 1;
         private const int ModifyLevel = 2;

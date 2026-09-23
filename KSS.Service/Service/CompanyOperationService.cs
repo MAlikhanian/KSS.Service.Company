@@ -72,9 +72,12 @@ namespace KSS.Service.Service
                 // 2. Add Company Translations (own table only)
                 if (dto.Translations != null && dto.Translations.Any())
                 {
+                    // The company id is server-generated here; the per-company guard adds no
+                    // protection and would depend on uncommitted-row visibility.
+                    var newCompanyTranslation = (INewCompanyTranslation)_translationService;
                     foreach (var t in dto.Translations)
                     {
-                        await _translationService.AddDtoAsync(new TranslationDto
+                        await newCompanyTranslation.AddForNewCompanyAsync(new TranslationDto
                         {
                             CompanyId = companyDto.Id,
                             LanguageId = t.LanguageId,
@@ -103,14 +106,19 @@ namespace KSS.Service.Service
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    await _nameHistoryService.AddAsync(_mapper.Map<NameHistory>(nameHistoryDto));
+                    // The company id is server-generated here; the per-company guard adds no
+                    // protection and would depend on uncommitted-row visibility.
+                    var newCompanyNameHistory = (INewCompanyNameHistory)_nameHistoryService;
+                    await newCompanyNameHistory.AddForNewCompanyAsync(_mapper.Map<NameHistory>(nameHistoryDto));
 
                     // 4. Add Name History Translations (own table only)
                     if (dto.NameHistory.Translations != null && dto.NameHistory.Translations.Any())
                     {
+                        // Same reason as above: the entry belongs to the company created here.
+                        var newCompanyNameHistoryTranslation = (INewCompanyNameHistoryTranslation)_nameHistoryTranslationService;
                         foreach (var t in dto.NameHistory.Translations)
                         {
-                            await _nameHistoryTranslationService.AddDtoAsync(new NameHistoryTranslationDto
+                            await newCompanyNameHistoryTranslation.AddForNewCompanyAsync(new NameHistoryTranslationDto
                             {
                                 NameHistoryId = nameHistoryId,
                                 LanguageId = t.LanguageId,

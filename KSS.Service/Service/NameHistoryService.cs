@@ -1,19 +1,43 @@
+using System.Security.Claims;
 using AutoMapper;
 using KSS.Helper;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
+using Microsoft.AspNetCore.Http;
 
 namespace KSS.Service.Service
 {
-    public class NameHistoryService : BaseService<NameHistory, NameHistoryDto, NameHistoryInsertDto, NameHistoryDto>, INameHistoryService
+    /// <summary>
+    /// Adds the first name history entry of a company being created in the same operation.
+    /// Internal to this assembly, so no controller can reach it.
+    /// </summary>
+    internal interface INewCompanyNameHistory
     {
-        private readonly INameHistoryRepository _nameHistoryRepository;
+        Task AddForNewCompanyAsync(NameHistory item);
+    }
 
-        public NameHistoryService(IMapper mapper, INameHistoryRepository repository) : base(mapper, repository)
+    public class NameHistoryService : BaseService<NameHistory, NameHistoryDto, NameHistoryInsertDto, NameHistoryDto>, INameHistoryService, INewCompanyNameHistory, ICompanyScopedWrites
+    {
+        private const int ModifyLevel = 2;
+        private const string ModifyDenied = "You do not have permission to modify this company's name history.";
+        private const string MoveDenied = "A name history entry cannot be moved to another company.";
+        private const string NotThisCompany = "Name history entry not found for this company.";
+
+        private readonly INameHistoryRepository _nameHistoryRepository;
+        private readonly IAccessService _accessService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public NameHistoryService(
+            IMapper mapper,
+            INameHistoryRepository repository,
+            IAccessService accessService,
+            IHttpContextAccessor httpContextAccessor) : base(mapper, repository)
         {
             _nameHistoryRepository = repository;
+            _accessService = accessService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // ── New result-returning methods (no exceptions for business rules) ──
@@ -98,25 +122,63 @@ namespace KSS.Service.Service
         }
 
         // ── Base overrides (safety net — delegates to result-returning methods above) ──
+        // Every write reachable through BaseController checks Information level 2 on the
+        // company its rows belong to. Updates and removals use the STORED row, never the
+        // company in the request body. Range operations check every item before anything
+        // is written: one denied item denies the whole call.
 
         public override void Remove(NameHistory item, bool saveChanges = true)
         {
-            var result = DeleteNameHistory(item.Id, item.CompanyId);
+            var stored = _nameHistoryRepository.Find(item.Id);
+            if (stored == null || stored.CompanyId != item.CompanyId)
+                throw new BusinessRuleException(NotThisCompany);
+            RequireNameHistoryModifyAsync(stored.CompanyId).GetAwaiter().GetResult();
+
+            var result = DeleteNameHistory(stored.Id, stored.CompanyId);
             if (!result.Success)
                 throw new BusinessRuleException(result.Message!);
         }
 
+        public override void RemoveRange(IEnumerable<NameHistory> items, bool saveChanges = true)
+        {
+            var stored = items
+                .Select(x => _nameHistoryRepository.Find(x.Id))
+                .Where(x => x != null)
+                .Select(x => x!)
+                .ToList();
+
+            RequireModifyOnEveryCompanyAsync(stored.Select(x => x.CompanyId)).GetAwaiter().GetResult();
+            // The tracked stored rows are removed, not the request instances.
+            base.RemoveRange(stored, saveChanges);
+        }
+
         public override async Task AddAsync(NameHistory item, bool saveChanges = true)
         {
-            var result = await AddNameHistoryAsync(item, saveChanges);
-            if (!result.Success)
-                throw new BusinessRuleException(result.Message!);
+            await RequireNameHistoryModifyAsync(item.CompanyId);
+            await AddWithRulesAsync(item, saveChanges);
         }
 
         public override async Task AddDtoAsync(NameHistoryInsertDto item, bool saveChanges = true)
         {
             var entity = _mapper.Map<NameHistory>(item);
-            var result = await AddNameHistoryAsync(entity, saveChanges);
+            await RequireNameHistoryModifyAsync(entity.CompanyId);
+            await AddWithRulesAsync(entity, saveChanges);
+        }
+
+        public override async Task AddRangeAsync(IEnumerable<NameHistory> items, bool saveChanges = true)
+        {
+            var list = items.ToList();
+            await RequireModifyOnEveryCompanyAsync(list.Select(x => x.CompanyId));
+            await base.AddRangeAsync(list, saveChanges);
+        }
+
+        // Company creation adds the first entry of a company whose id is generated by the
+        // server in the same operation, so there is no existing company to protect.
+        Task INewCompanyNameHistory.AddForNewCompanyAsync(NameHistory item) => AddWithRulesAsync(item, true);
+
+        private async Task AddWithRulesAsync(NameHistory item, bool saveChanges)
+        {
+            var result = await AddNameHistoryAsync(item, saveChanges);
             if (!result.Success)
                 throw new BusinessRuleException(result.Message!);
         }
@@ -125,8 +187,13 @@ namespace KSS.Service.Service
 
         public override void Update(NameHistory item, bool saveChanges = true)
         {
-            ValidateNameHistory(item);
-            base.Update(item, saveChanges);
+            var stored = PrepareUpdates(new[] { item });
+            base.Update(stored[0], saveChanges);
+        }
+
+        public override void UpdateRange(IEnumerable<NameHistory> items, bool saveChanges = true)
+        {
+            base.UpdateRange(PrepareUpdates(items), saveChanges);
         }
 
         /// <summary>
@@ -139,8 +206,12 @@ namespace KSS.Service.Service
             var existing = _nameHistoryRepository.Find(item.Id)
                 ?? throw new KeyNotFoundException($"NameHistory with Id '{item.Id}' not found.");
 
+            // The stored row's company decides; the entry cannot be moved to another company.
+            RequireNameHistoryModifyAsync(existing.CompanyId).GetAwaiter().GetResult();
+            if (item.CompanyId != Guid.Empty && item.CompanyId != existing.CompanyId)
+                throw new BusinessRuleException(MoveDenied);
+
             // Only update the editable fields - preserve CreatedAt, UpdatedAt (managed by trigger)
-            existing.CompanyId = item.CompanyId;
             existing.StartDate = item.StartDate;
             existing.EndDate = item.EndDate;
             existing.Description = item.Description;
@@ -194,6 +265,72 @@ namespace KSS.Service.Service
                 previousCurrent.EndDate = newStartDate;
                 base.Update(previousCurrent, saveChanges: false); // Save together with the new entry
             }
+        }
+
+        // Loads every stored row, checks all of them (company level on the stored row, and
+        // no change of company) before any value is applied, then copies the request's
+        // values onto the tracked stored rows. Writing through the tracked instance avoids
+        // attaching a second instance with the same key.
+        private List<NameHistory> PrepareUpdates(IEnumerable<NameHistory> items)
+        {
+            var pairs = items
+                .Select(item => (Item: item, Stored: _nameHistoryRepository.Find(item.Id)
+                    ?? throw new KeyNotFoundException($"NameHistory with Id '{item.Id}' not found.")))
+                .ToList();
+
+            if (pairs.Any(p => p.Item.CompanyId != p.Stored.CompanyId))
+                throw new BusinessRuleException(MoveDenied);
+
+            RequireModifyOnEveryCompanyAsync(pairs.Select(p => p.Stored.CompanyId)).GetAwaiter().GetResult();
+
+            foreach (var (item, stored) in pairs)
+            {
+                CopyScalarValues(item, stored);
+                ValidateNameHistory(stored);
+            }
+
+            return pairs.Select(p => p.Stored).ToList();
+        }
+
+        // Scalar columns only; navigation properties and the key are left untouched.
+        private static void CopyScalarValues(NameHistory source, NameHistory target)
+        {
+            foreach (var property in typeof(NameHistory).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (!property.CanRead || !property.CanWrite || property.Name == nameof(NameHistory.Id))
+                    continue;
+
+                var type = property.PropertyType;
+                if (type.IsValueType || type == typeof(string))
+                    property.SetValue(target, property.GetValue(source));
+            }
+        }
+
+        private async Task RequireModifyOnEveryCompanyAsync(IEnumerable<Guid> companyIds)
+        {
+            foreach (var companyId in companyIds.Distinct())
+                await RequireNameHistoryModifyAsync(companyId);
+        }
+
+        // The Information.Modify permission (checked by the permission filter) is global to
+        // the caller. This confirms the caller also holds Information level 2 on the
+        // specific company the rows belong to. Fails closed: no caller, or a lower level,
+        // is denied.
+        private async Task RequireNameHistoryModifyAsync(Guid companyId)
+        {
+            var levels = await _accessService.GetLevelsAsync(companyId, GetCallerPersonId());
+            if (levels.Information < ModifyLevel)
+                throw new BusinessRuleException(ModifyDenied);
+        }
+
+        private Guid GetCallerPersonId()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var raw = user?.FindFirstValue("personId")
+                   ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(raw) || !Guid.TryParse(raw, out var personId))
+                throw new BusinessRuleException("Caller PersonId not found on the JWT.");
+            return personId;
         }
     }
 }
