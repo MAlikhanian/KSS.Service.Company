@@ -6,7 +6,8 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class LegalFormService : BaseService<LegalForm, LegalFormDto, LegalFormDto, LegalFormDto>, ILegalFormService
+    // Reference data shared by every company: no row is a company's own record, so the generic reads stay open.
+    public class LegalFormService : BaseService<LegalForm, LegalFormDto, LegalFormDto, LegalFormDto>, ILegalFormService, IReferenceData
     {
         public LegalFormService(IMapper mapper, ILegalFormRepository repository) : base(mapper, repository) { }
     }

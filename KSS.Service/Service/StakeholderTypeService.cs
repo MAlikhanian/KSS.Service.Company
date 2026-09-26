@@ -6,7 +6,8 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class StakeholderTypeService : BaseService<StakeholderType, StakeholderTypeDto, StakeholderTypeDto, StakeholderTypeDto>, IStakeholderTypeService
+    // Reference data shared by every company: no row is a company's own record, so the generic reads stay open.
+    public class StakeholderTypeService : BaseService<StakeholderType, StakeholderTypeDto, StakeholderTypeDto, StakeholderTypeDto>, IStakeholderTypeService, IReferenceData
     {
         public StakeholderTypeService(IMapper mapper, IStakeholderTypeRepository repository) : base(mapper, repository) { }
     }

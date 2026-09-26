@@ -24,15 +24,17 @@ namespace KSS.Service.Service
         public async Task<List<RoleAccessGrantSummaryDto>> ListGrantsByCompanyAsync(Guid companyId)
         {
             // Per-company rows for this company + all global rows (CompanyId == NULL).
+            // Live rows only: an inactive or deleted grant is not listed as a grant.
             var rows = await _repository.ToListAsync(
-                ra => ra.CompanyId == companyId || ra.CompanyId == null);
+                ra => (ra.CompanyId == companyId || ra.CompanyId == null)
+                   && ra.IsActive && ra.DeletedAt == null);
 
             return GroupRows(rows);
         }
 
         public async Task<List<RoleAccessGrantSummaryDto>> ListAllGrantsAsync()
         {
-            var rows = await _repository.ToListAsync();
+            var rows = await _repository.ToListAsync(ra => ra.IsActive && ra.DeletedAt == null);
             return GroupRows(rows);
         }
 
@@ -59,6 +61,8 @@ namespace KSS.Service.Service
                     throw new BusinessRuleException("شما اجازه اعطای دسترسی نقشی برای این شرکت را ندارید");
             }
 
+            // Inactive and deleted rows included: UQ_RoleAccess_PerCompany does not include
+            // IsActive, so a row left behind would block the insert below.
             var existing = await _repository.ToListAsync(
                 ra => ra.CompanyId == dto.CompanyId && ra.GrantedToRoleId == dto.GrantedToRoleId);
 
@@ -102,6 +106,8 @@ namespace KSS.Service.Service
                     throw new BusinessRuleException("شما اجازه حذف دسترسی نقشی این شرکت را ندارید");
             }
 
+            // Every row of the pair, inactive and deleted ones included, so a revocation
+            // leaves nothing behind.
             var rows = await _repository.ToListAsync(
                 ra => ra.CompanyId == companyId && ra.GrantedToRoleId == grantedToRoleId);
 

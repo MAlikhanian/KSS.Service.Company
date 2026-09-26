@@ -11,11 +11,13 @@ namespace KSS.Service.Service
     public class CompanySelectService : ICompanySelectService
     {
         private readonly MainDbContext _dbContext;
+        private readonly IAccessService _accessService;
         private readonly IHttpContextAccessor? _httpContextAccessor;
 
-        public CompanySelectService(MainDbContext dbContext, IHttpContextAccessor? httpContextAccessor = null)
+        public CompanySelectService(MainDbContext dbContext, IAccessService accessService, IHttpContextAccessor? httpContextAccessor = null)
         {
             _dbContext = dbContext;
+            _accessService = accessService;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -25,17 +27,6 @@ namespace KSS.Service.Service
             if (user?.Identity?.IsAuthenticated != true) return null;
             var raw = user.FindFirstValue("personId") ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(raw, out var id) ? id : null;
-        }
-
-        private List<Guid> GetCallerRoleIds()
-        {
-            var user = _httpContextAccessor?.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true) return new List<Guid>();
-            return user.FindAll("roleId")
-                .Select(c => Guid.TryParse(c.Value, out var id) ? id : Guid.Empty)
-                .Where(id => id != Guid.Empty)
-                .Distinct()
-                .ToList();
         }
 
         /// <summary>
@@ -53,48 +44,23 @@ namespace KSS.Service.Service
             if (companyIds != null && companyIds.Count == 0)
                 return new List<CompanySelectDto>();
 
-            // Visibility filter: caller must have an Access row (per-person) OR a
-            // RoleAccess row (per-company or global) for the company to be returned.
+            // Visibility: the companies the caller may read, by the same rule as every other
+            // read of company information (Information level 1 or more on a live grant; a live
+            // global role grant at that level covers every company). A grant on the Access
+            // section alone does not make a company visible here, so the list never offers a
+            // company whose information the caller cannot open.
             var callerId = GetCallerPersonId();
-            var roleIds = GetCallerRoleIds();
-
             if (callerId == null) return new List<CompanySelectDto>();
 
-            // Global short-circuit: any RoleAccess row with CompanyId IS NULL whose
-            // role matches the caller → caller sees every company (admins).
-            var hasGlobal = roleIds.Count > 0 && await _dbContext.RoleAccesses
-                .AsNoTracking()
-                .AnyAsync(ra => ra.CompanyId == null && roleIds.Contains(ra.GrantedToRoleId));
-
-            HashSet<Guid>? allowedCompanyIds = null;
-            if (!hasGlobal)
-            {
-                var personalIds = await _dbContext.Accesses
-                    .AsNoTracking()
-                    .Where(a => a.GrantedToPersonId == callerId.Value)
-                    .Select(a => a.CompanyId)
-                    .Distinct()
-                    .ToListAsync();
-
-                var roleScopedIds = roleIds.Count == 0
-                    ? new List<Guid>()
-                    : await _dbContext.RoleAccesses
-                        .AsNoTracking()
-                        .Where(ra => ra.CompanyId != null && roleIds.Contains(ra.GrantedToRoleId))
-                        .Select(ra => ra.CompanyId!.Value)
-                        .Distinct()
-                        .ToListAsync();
-
-                allowedCompanyIds = new HashSet<Guid>(personalIds.Concat(roleScopedIds));
-                if (allowedCompanyIds.Count == 0) return new List<CompanySelectDto>();
-            }
+            var readable = await _accessService.ReadableCompanyIdsAsync(callerId.Value);
+            if (!readable.All && readable.CompanyIds.Count == 0) return new List<CompanySelectDto>();
 
             // Get companies with current name. Apply the visibility filter only
-            // when there is no global short-circuit, to keep the EF expression
+            // when the caller does not read every company, to keep the EF expression
             // tree simple.
-            var allowedList = allowedCompanyIds?.ToList();
+            var allowedList = readable.All ? null : readable.CompanyIds.ToList();
             IQueryable<KSS.Entity.Company> visibleCompanies = _dbContext.Companies;
-            if (!hasGlobal)
+            if (!readable.All)
                 visibleCompanies = visibleCompanies.Where(c => allowedList!.Contains(c.Id));
 
             // Optional explicit-ID filter, applied AFTER the access filter so it can

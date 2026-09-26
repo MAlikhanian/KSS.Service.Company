@@ -14,6 +14,13 @@ namespace KSS.Service.IService
         Task<AccessLevelsDto> GetLevelsAsync(Guid companyId, Guid callerPersonId);
 
         /// <summary>
+        /// The companies the caller may read: Information level 1 or more on live grants,
+        /// by the same rules as GetLevelsAsync (personal grants, and the caller's role grants,
+        /// where a global role grant covers every company). No caller means no company.
+        /// </summary>
+        Task<ReadableCompanies> ReadableCompanyIdsAsync(Guid callerPersonId);
+
+        /// <summary>
         /// Owner-only. Replaces all access rows for (CompanyId, GrantedToPersonId)
         /// with one row per section whose Level &gt; 0.
         /// </summary>

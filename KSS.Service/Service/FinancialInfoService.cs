@@ -3,14 +3,17 @@ using AutoMapper;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Helper;
+using KSS.Helper.Model;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
 using Microsoft.AspNetCore.Http;
 
 namespace KSS.Service.Service
 {
-    public class FinancialInfoService : BaseService<FinancialInfo, FinancialInfoDto, FinancialInfoInsertDto, FinancialInfoDto>, IFinancialInfoService, ICompanyScopedWrites
+    public class FinancialInfoService : BaseService<FinancialInfo, FinancialInfoDto, FinancialInfoInsertDto, FinancialInfoDto>, IFinancialInfoService, ICompanyScopedWrites, ICompanyScopedReads
     {
+        private const int ReadLevel = 1;
+        private const string ReadDenied = "You do not have permission to read this company's financial information.";
         private const int ModifyLevel = 2;
         private const string ModifyDenied = "You do not have permission to modify this company's financial information.";
         private const string MoveDenied = "Financial information cannot be moved to another company.";
@@ -35,6 +38,30 @@ namespace KSS.Service.Service
         {
             var rows = await _financialInfoRepository.ToListAsync(x => x.CompanyId == companyId);
             return _mapper.Map<List<FinancialInfoDto>>(rows);
+        }
+
+        // Every read reachable through BaseController is limited to the companies the caller
+        // may read (Information level 1 or more on a live grant). A list returns only those
+        // companies' rows; a single row of any other company is refused.
+
+        public override async Task<IEnumerable<FinancialInfo>> ToListAsync()
+        {
+            var readable = await _accessService.ReadableCompanyIdsAsync(GetCallerPersonId());
+            if (readable.All)
+                return await base.ToListAsync();
+            if (readable.CompanyIds.Count == 0)
+                return Array.Empty<FinancialInfo>();
+
+            var companyIds = readable.CompanyIds.ToList();
+            return await _financialInfoRepository.ToListAsync(x => companyIds.Contains(x.CompanyId));
+        }
+
+        public override async Task<FinancialInfo> FindAsync(Filter id)
+        {
+            var row = await base.FindAsync(id);
+            if (row != null)
+                await RequireFinancialInfoReadAsync(row.CompanyId);
+            return row!;
         }
 
         // Every write reachable through BaseController checks Information level 2 on the
@@ -193,6 +220,14 @@ namespace KSS.Service.Service
             var levels = await _accessService.GetLevelsAsync(companyId, GetCallerPersonId());
             if (levels.Information < ModifyLevel)
                 throw new BusinessRuleException(ModifyDenied);
+        }
+
+        // Same rule for a single read: Information level 1 on the row's company. Fails closed.
+        private async Task RequireFinancialInfoReadAsync(Guid companyId)
+        {
+            var levels = await _accessService.GetLevelsAsync(companyId, GetCallerPersonId());
+            if (levels.Information < ReadLevel)
+                throw new BusinessRuleException(ReadDenied);
         }
 
         private Guid GetCallerPersonId()

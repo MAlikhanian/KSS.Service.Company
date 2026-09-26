@@ -75,8 +75,10 @@ namespace KSS.Service.Service
             // short-circuit. Admins get full access via the seeded RoleAccess
             // globals (CompanyId IS NULL) for SuperAdmin and CompanyAdmin.
 
+            // Only live grants count: an inactive or deleted row grants nothing.
             var rows = await _repository.ToListAsync(
-                a => a.CompanyId == companyId && a.GrantedToPersonId == callerPersonId);
+                a => a.CompanyId == companyId && a.GrantedToPersonId == callerPersonId
+                  && a.IsActive && a.DeletedAt == null);
 
             var dto = new AccessLevelsDto();
             foreach (var row in rows)
@@ -96,7 +98,8 @@ namespace KSS.Service.Service
             {
                 var roleRows = await _roleAccessRepository.ToListAsync(
                     ra => roleIds.Contains(ra.GrantedToRoleId)
-                       && (ra.CompanyId == companyId || ra.CompanyId == null));
+                       && (ra.CompanyId == companyId || ra.CompanyId == null)
+                       && ra.IsActive && ra.DeletedAt == null);
 
                 foreach (var row in roleRows)
                 {
@@ -109,6 +112,36 @@ namespace KSS.Service.Service
             }
 
             return dto;
+        }
+
+        // The read rule for lists, matching GetLevelsAsync company by company: Information
+        // level 1 or more on a live grant, personal or through one of the caller's roles.
+        // A live global role grant at that level covers every company; a global grant on the
+        // Access section alone does not. Fails closed: no caller reads nothing.
+        public async Task<ReadableCompanies> ReadableCompanyIdsAsync(Guid callerPersonId)
+        {
+            if (callerPersonId == Guid.Empty)
+                return ReadableCompanies.None;
+
+            var roleIds = GetCallerRoleIds();
+            var roleRows = roleIds.Count == 0
+                ? new List<RoleAccess>()
+                : (await _roleAccessRepository.ToListAsync(
+                    ra => roleIds.Contains(ra.GrantedToRoleId)
+                       && ra.SectionId == AccessSectionId.Information && ra.Level >= ReadLevel
+                       && ra.IsActive && ra.DeletedAt == null)).ToList();
+
+            if (roleRows.Any(ra => ra.CompanyId == null))
+                return ReadableCompanies.Every;
+
+            var personal = await _repository.ToListAsync(
+                a => a.GrantedToPersonId == callerPersonId
+                  && a.SectionId == AccessSectionId.Information && a.Level >= ReadLevel
+                  && a.IsActive && a.DeletedAt == null);
+
+            var companyIds = new HashSet<Guid>(personal.Select(a => a.CompanyId));
+            companyIds.UnionWith(roleRows.Select(ra => ra.CompanyId!.Value));
+            return new ReadableCompanies(false, companyIds);
         }
 
         public async Task UpsertGrantAsync(AccessGrantDto dto, Guid callerPersonId)
@@ -125,7 +158,9 @@ namespace KSS.Service.Service
             if (levels.Access < 2)
                 throw new BusinessRuleException("شما اجازه اعطای دسترسی برای این شرکت را ندارید");
 
-            // Replace all rows for this (CompanyId, GrantedToPersonId) pair.
+            // Replace all rows for this (CompanyId, GrantedToPersonId) pair, inactive and
+            // deleted ones included: UQ_Access (CompanyId, GrantedToPersonId, SectionId) does
+            // not include IsActive, so a row left behind would block the insert below.
             var existing = await _repository.ToListAsync(
                 a => a.CompanyId == dto.CompanyId && a.GrantedToPersonId == dto.GrantedToPersonId);
 
@@ -161,6 +196,8 @@ namespace KSS.Service.Service
             if (levels.Access < 2)
                 throw new BusinessRuleException("شما اجازه حذف دسترسی این شرکت را ندارید");
 
+            // Every row of the pair, inactive and deleted ones included, so a revocation
+            // leaves nothing behind.
             var rows = await _repository.ToListAsync(
                 a => a.CompanyId == companyId && a.GrantedToPersonId == grantedToPersonId);
 
@@ -175,7 +212,8 @@ namespace KSS.Service.Service
 
         public async Task<List<AccessGrantSummaryDto>> ListGrantsByCompanyAsync(Guid companyId)
         {
-            var rows = await _repository.ToListAsync(a => a.CompanyId == companyId);
+            var rows = await _repository.ToListAsync(
+                a => a.CompanyId == companyId && a.IsActive && a.DeletedAt == null);
 
             return rows
                 .GroupBy(r => r.GrantedToPersonId)
@@ -207,7 +245,7 @@ namespace KSS.Service.Service
             // Walk every row in the Access table; collapse multi-section rows
             // into a distinct (CompanyId, GrantedToPersonId) pair so consumers
             // get exactly one row per (company, grantee).
-            var rows = await _repository.ToListAsync();
+            var rows = await _repository.ToListAsync(a => a.IsActive && a.DeletedAt == null);
             return rows
                 .GroupBy(r => new { r.CompanyId, r.GrantedToPersonId })
                 .Select(g => new AccessGrantPairDto
@@ -217,6 +255,8 @@ namespace KSS.Service.Service
                 })
                 .ToList();
         }
+
+        private const int ReadLevel = 1;
 
         private static bool IsValidLevel(int level) => level >= 0 && level <= 2;
     }

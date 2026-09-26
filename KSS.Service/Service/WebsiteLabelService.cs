@@ -6,7 +6,8 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class WebsiteLabelService : BaseService<WebsiteLabel, WebsiteLabelDto, WebsiteLabelDto, WebsiteLabelDto>, IWebsiteLabelService
+    // Reference data shared by every company: no row is a company's own record, so the generic reads stay open.
+    public class WebsiteLabelService : BaseService<WebsiteLabel, WebsiteLabelDto, WebsiteLabelDto, WebsiteLabelDto>, IWebsiteLabelService, IReferenceData
     {
         public WebsiteLabelService(IMapper mapper, IWebsiteLabelRepository repository) : base(mapper, repository) { }
     }

@@ -21,22 +21,46 @@ namespace KSS.Api.Controller
         public BaseController(IBaseService<T, TViewDto, TAddDto, TUpdateDto> service) => _service = service;
 
         [HttpPost]
-        public async Task<ActionResult> FindAsync([FromBody] Filter id) => Ok(await _service.FindAsync(id));
+        public async Task<ActionResult> FindAsync([FromBody] Filter id)
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(await _service.FindAsync(id));
+        }
 
         [HttpPost]
-        public async Task<ActionResult> SingleAsync([FromBody] T filter) => Ok(await _service.SingleAsync(filter));
+        public async Task<ActionResult> SingleAsync([FromBody] T filter)
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(await _service.SingleAsync(filter));
+        }
 
         [HttpGet]
-        public async Task<ActionResult> ToListAllAsync() => Ok(await _service.ToListAsync());
+        public async Task<ActionResult> ToListAllAsync()
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(await _service.ToListAsync());
+        }
 
         [HttpPost]
-        public async Task<ActionResult> ToListAsync([FromBody] T filter) => Ok(await _service.ToListAsync(filter));
+        public async Task<ActionResult> ToListAsync([FromBody] T filter)
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(await _service.ToListAsync(filter));
+        }
 
         [HttpPost]
-        public async Task<ActionResult> ToListByFilterAsync([FromBody] Filter filter) => Ok(await _service.ToListAsync(filter));
+        public async Task<ActionResult> ToListByFilterAsync([FromBody] Filter filter)
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(await _service.ToListAsync(filter));
+        }
 
         [HttpPost]
-        public async Task<ActionResult> ToListDtoAsync([FromBody] T filter) => Ok(_service.Dto(await _service.ToListAsync(filter)));
+        public async Task<ActionResult> ToListDtoAsync([FromBody] T filter)
+        {
+            if (RefuseUnscopedRead() is { } refused) return refused;
+            return Ok(_service.Dto(await _service.ToListAsync(filter)));
+        }
 
         [HttpPost]
         public async Task<ActionResult> AddAsync([FromBody] T item)
@@ -109,6 +133,18 @@ namespace KSS.Api.Controller
             _service.RemoveRange(items);
 
             return NoContent();
+        }
+
+        // The generic read actions are available only when the service declares
+        // ICompanyScopedReads, meaning every read is limited to the companies the caller may
+        // read, or IReferenceData, meaning its rows belong to no company. A permission is global
+        // to the caller, so an unscoped read of company data would show every company's records
+        // to any holder. This refusal is the control, not an oversight: a record type becomes
+        // readable here only by scoping its service's reads, never by removing this line.
+        private ActionResult? RefuseUnscopedRead()
+        {
+            if (_service is ICompanyScopedReads || _service is IReferenceData) return null;
+            return StatusCode(403, new { statusCode = 403, message = "This record type cannot be read through this route." });
         }
 
         // The generic write actions are available only when the service declares

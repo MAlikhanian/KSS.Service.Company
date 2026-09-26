@@ -3,6 +3,7 @@ using AutoMapper;
 using KSS.Dto;
 using KSS.Entity;
 using KSS.Helper;
+using KSS.Helper.Model;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
 using Microsoft.AspNetCore.Http;
@@ -22,8 +23,10 @@ namespace KSS.Service.Service
     /// Single-table CRUD service for NameHistoryTranslation.
     /// Multi-table orchestration (sync to Translation, etc.) is handled by CompanyNameManagementService.
     /// </summary>
-    public class NameHistoryTranslationService : BaseService<NameHistoryTranslation, NameHistoryTranslationDto, NameHistoryTranslationDto, NameHistoryTranslationDto>, INameHistoryTranslationService, INewCompanyNameHistoryTranslation, ICompanyScopedWrites
+    public class NameHistoryTranslationService : BaseService<NameHistoryTranslation, NameHistoryTranslationDto, NameHistoryTranslationDto, NameHistoryTranslationDto>, INameHistoryTranslationService, INewCompanyNameHistoryTranslation, ICompanyScopedWrites, ICompanyScopedReads
     {
+        private const int ReadLevel = 1;
+        private const string ReadDenied = "You do not have permission to read this company's name history translations.";
         private const int ModifyLevel = 2;
         private const string ModifyDenied = "You do not have permission to modify this company's name history translations.";
         private const string NameHistoryNotFound = "Name history entry not found.";
@@ -44,6 +47,43 @@ namespace KSS.Service.Service
             _nameHistoryRepository = nameHistoryRepository;
             _accessService = accessService;
             _httpContextAccessor = httpContextAccessor;
+        }
+
+        // Every read reachable through BaseController is limited to the companies the caller
+        // may read (Information level 1 or more on a live grant), through the company of the
+        // name history entry each translation belongs to. A list returns only those companies'
+        // translations; a single row of any other company is refused.
+
+        public override async Task<IEnumerable<NameHistoryTranslation>> ToListAsync()
+        {
+            var readable = await _accessService.ReadableCompanyIdsAsync(GetCallerPersonId());
+            if (readable.All)
+                return await base.ToListAsync();
+            if (readable.CompanyIds.Count == 0)
+                return Array.Empty<NameHistoryTranslation>();
+
+            var companyIds = readable.CompanyIds.ToList();
+            var entryIds = (await _nameHistoryRepository.ToListAsync(h => companyIds.Contains(h.CompanyId)))
+                .Select(h => h.Id)
+                .ToList();
+            if (entryIds.Count == 0)
+                return Array.Empty<NameHistoryTranslation>();
+
+            return await _translationRepository.ToListAsync(t => entryIds.Contains(t.NameHistoryId));
+        }
+
+        public override async Task<NameHistoryTranslation> FindAsync(Filter id)
+        {
+            var row = await base.FindAsync(id);
+            if (row != null)
+            {
+                var entry = _nameHistoryRepository.SingleOrDefault(h => h.Id == row.NameHistoryId)
+                    ?? throw new BusinessRuleException(ReadDenied);
+                var levels = await _accessService.GetLevelsAsync(entry.CompanyId, GetCallerPersonId());
+                if (levels.Information < ReadLevel)
+                    throw new BusinessRuleException(ReadDenied);
+            }
+            return row!;
         }
 
         // Every write reachable through BaseController checks Information level 2 on the

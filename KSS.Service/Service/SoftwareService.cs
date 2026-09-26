@@ -7,7 +7,9 @@ using KSS.Service.IService;
 
 namespace KSS.Service.Service
 {
-    public class SoftwareService : BaseService<Software, SoftwareDto, SoftwareInsertDto, SoftwareUpdateDto>, ISoftwareService
+    // The software catalog is reference data: CompanyId names the product's provider, not a company
+    // whose record the row is. A company's own use of a product is CompanySoftware, which is not.
+    public class SoftwareService : BaseService<Software, SoftwareDto, SoftwareInsertDto, SoftwareUpdateDto>, ISoftwareService, IReferenceData
     {
         private readonly MainDbContext _db;
 
