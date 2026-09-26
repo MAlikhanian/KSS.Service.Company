@@ -94,6 +94,7 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IAccessService, AccessService>();
             services.AddScoped<IRoleAccessRepository, RoleAccessRepository>();
             services.AddScoped<IRoleAccessService, RoleAccessService>();
+            services.AddScoped<IMyGrantsService, MyGrantsService>();
 
             // Company ownership (tenant assignment) + current-company resolver.
             services.AddScoped<ICompanyOwnershipRepository, CompanyOwnershipRepository>();

@@ -21,6 +21,7 @@ namespace KSS.Api.Tests
     public class AuthorizationSweepTests
     {
         private const string PendingScopedReads = "pending a decision on company-scoped reads";
+        private const string CallerScoped = "caller-scoped: returns only the signed-in caller's own records, identified from the token";
 
         // Actions deliberately open to any signed-in user. Listing an entry here records
         // that it is known, not that it is approved.
@@ -30,6 +31,7 @@ namespace KSS.Api.Tests
             ["FinancialInfoController.ByCompany"] = "read by a reporting service for registered capital; " + PendingScopedReads,
             ["CompanyController.Count"] = "dashboard total of companies; " + PendingScopedReads,
             ["AccessController.ListAllGrants"] = "read by a reporting service for (company, grantee) pairs; " + PendingScopedReads,
+            ["AccessController.MyGrants"] = "the caller's own grants and the companies they name; " + CallerScoped,
         };
 
         private static readonly Assembly Api = typeof(CompanyController).Assembly;
@@ -120,7 +122,8 @@ namespace KSS.Api.Tests
         public void Every_allow_list_entry_carries_its_reason()
         {
             foreach (var entry in OpenToAnySignedInUser)
-                Assert.Contains(PendingScopedReads, entry.Value);
+                Assert.True(entry.Value.Contains(PendingScopedReads, StringComparison.Ordinal) || entry.Value.Contains(CallerScoped, StringComparison.Ordinal),
+                    entry.Key + " carries neither reason: " + entry.Value);
         }
 
         // ── Specific controllers ─────────────────────────────────────────────────

@@ -80,6 +80,26 @@ namespace KSS.Api.Controller
             return Ok(data);
         }
 
+        /// <summary>
+        /// GET /Api/Access/MyGrants — the signed-in caller's own grants: her personal grants and
+        /// the grants of her roles, live or not, with their flags, and the companies they name.
+        /// A grant that covers every company names none and is not expanded. The caller and her
+        /// roles are read from the token only; nothing in the request can name another person.
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<MyGrantsDto>> MyGrants([FromServices] IMyGrantsService myGrants)
+        {
+            var result = await myGrants.GetAsync(GetCallerPersonId(), GetCallerRoleIds());
+            return Ok(result);
+        }
+
+        // The caller's roles, from the token's roleId claims: the same source the access levels use.
+        private List<Guid> GetCallerRoleIds() => User.FindAll("roleId")
+            .Select(c => Guid.TryParse(c.Value, out var id) ? id : Guid.Empty)
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
         private Guid GetCallerPersonId()
         {
             var raw = User.FindFirstValue("personId")
